@@ -1,0 +1,10 @@
+#version 330 core
+layout (location = 0) in vec2 aPos;
+
+uniform mat4 camera;
+uniform vec4 posScale;
+
+void main()
+{
+    gl_Position = camera * vec4(aPos * posScale.zw + posScale.xy, .5, 1.0);
+}
