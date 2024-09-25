@@ -117,7 +117,8 @@ SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompList({ HASH(Position), HASH
 		Position& pos = entity[0]->position;
 		Camera& camera = entity[1]->camera;
 		camera.matrix = glm::identity<mat4>();
-		camera.matrix = glm::scale(camera.matrix, vec3(screenDim.y / (screenDim.x * camera.zoom), 1 / camera.zoom, 1));
+		vec3 test = vec3(pixelsPerUnit * 2.f / camera.framebuffer->dim.x, pixelsPerUnit * 2.f / camera.framebuffer->dim.y, 1);
+		camera.matrix = glm::scale(camera.matrix, test);
 		camera.matrix = glm::translate(camera.matrix, vec3(-pos.pos, 0));
 	}
 }

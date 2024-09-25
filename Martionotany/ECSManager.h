@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include "Camera.h"
+#include "Framebuffer.h"
 #include "Player.h"
 
 #define TYPE(type, name) type name; \

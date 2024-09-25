@@ -46,6 +46,7 @@ typedef uint8_t byte;
 ivec2 screenDim = ivec2(800, 600);
 float currentTime = 0, deltaTime = 0;
 GLFWwindow* window;
+constexpr int pixelsPerUnit = 8;
 
 namespace Vec
 {

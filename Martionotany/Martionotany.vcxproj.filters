@@ -59,9 +59,16 @@
     <ClInclude Include="Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="DefaultFrag.txt" />
     <CopyFileToFolders Include="DefaultVert.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="FramebufferFrag.txt" />
+    <Text Include="FramebufferVert.txt" />
   </ItemGroup>
 </Project>

@@ -10,25 +10,29 @@ int main()
     System::startupGenerics.push_back({ WindowInit, Before });
     System::startupGenerics.push_back({ ShaderInit, Before });
     System::startupGenerics.push_back({ MeshInit, Before });
+    System::startupGenerics.push_back({ FramebufferInit, After });
 
     // Updates:
     System::updateGenerics.push_back({ WindowUpdate, Before });
     System::updateGenerics.push_back({ Input::UpdateKeys, Before });
+    System::updateGenerics.push_back({ RenderToFramebuffer, Before });
+    System::updateGenerics.push_back({ RenderToScreen, After });
 
     // Closes:
+    System::closeGenerics.push_back({ FramebufferTerminate, After });
     System::closeGenerics.push_back({ ShaderTerminate, After });
     System::closeGenerics.push_back({ MeshTerminate, After });
     System::closeGenerics.push_back({ WindowTerminate, After });
-
+    
     // Entities:
-    ecs.AddEntity(Entity({ Position(), Camera(5, RenderLayer::DEFAULT) }));
+    ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT) }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
-        Position(), MeshScale(), Player(ecs.GetEntityReversed(0).components[0].position, 10, 2, 5), }));
+        Position({0, 0}), MeshScale(), Player(ecs.GetEntityReversed(0).components[0].position, 10, 2, 5),}));
 
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
-        Position({3, 0}), MeshScale() }));
+        Position({3, 0}), MeshScale()}));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
-        Position({5, 0}), MeshScale() }));
+        Position({5, 0}), MeshScale()}));
 
     // Program Execution:
     ecs.Start();

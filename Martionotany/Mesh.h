@@ -44,7 +44,7 @@ public:
         if (location != "N")
         {
             fastObjMesh* mesh = fast_obj_read((location + ".obj").c_str());
-
+            
             vector<float> positions((mesh->position_count - 1) * 3);
             for (uint i = 0; i < positions.size(); i++)
                 positions[i] = mesh->positions[i + 3];
@@ -97,10 +97,12 @@ public:
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec2), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
     }
 
     void Use() const
@@ -125,13 +127,13 @@ class TMesh : public Mesh
 {
 public:
     uint vao, vbo, ebo, indCount;
-    vector<vec2> vertices;
+    vector<float> vertices;
     vector<uint> indices;
 
     TMesh(uint vao = 0, uint vbo = 0, uint ebo = 0, uint indCount = 0) :
         vao(vao), vbo(vbo), ebo(ebo), indCount(indCount) { }
 
-    TMesh(const vector<vec2>&& vertices, const vector<uint>&& indices) :
+    TMesh(const vector<float>&& vertices, const vector<uint>&& indices) :
         vertices(vertices), indices(indices), indCount(static_cast<uint>(indices.size())),
         vao(0), vbo(0), ebo(0)
     {
@@ -148,11 +150,13 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec2), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint), indices.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
     }
 
     void Use() const
@@ -175,15 +179,15 @@ public:
 };
 
 VMesh triMesh = VMesh(read, {
-       -0.5f,-0.5f,
-         0.f, 0.5f,
-        0.5f,-0.5f
+       -0.5f,-0.5f, 0.f, 0.f,
+         0.f, 0.5f,0.5f, 1.f,
+        0.5f,-0.5f, 1.f, 0.f
     });
 TMesh quadMesh = TMesh({
-        vec2( 1.0f,  1.0f),
-        vec2( 1.0f, -1.0f),
-        vec2(-1.0f, -1.0f),
-        vec2(-1.0f,  1.0f)
+        1.0f,  1.0f, 1.f, 1.f,
+        1.0f, -1.0f, 1.f, 0.f,
+       -1.0f, -1.0f, 0.f, 0.f,
+       -1.0f,  1.0f, 0.f, 1.f
     }, {
         0, 1, 3,
         1, 2, 3

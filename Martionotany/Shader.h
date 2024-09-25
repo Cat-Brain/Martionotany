@@ -9,18 +9,21 @@ public:
     static vector<Shader*> shaders;
 
     uint program;
-    string vertLocation, fragLocation;
+    string name;
 
-    Shader(string vertLocation, string fragLocation) :
-        program(0), vertLocation(vertLocation + ".txt"), fragLocation(fragLocation + ".txt")
+    Shader(string name) :
+        program(0), name(name)
     {
         shaders.push_back(this);
     }
 };
+const string vertFileAppend = "Vert.txt", fragFileAppend = "Frag.txt";
+
 char Shader::sourceBuffer[Shader::bufferSize] = { 0 };
 vector<Shader*> Shader::shaders = { };
 
-Shader defaultShader("DefaultVert", "DefaultFrag");
+Shader defaultShader("Default"),
+    framebufferShader("Framebuffer");
 
 
 void ShaderInit()
@@ -30,7 +33,7 @@ void ShaderInit()
     for (Shader* shader : Shader::shaders)
     {
         std::fill_n(Shader::sourceBuffer, Shader::bufferSize, '\0');
-        testStream.open(shader->vertLocation);
+        testStream.open(shader->name + vertFileAppend);
         testStream.read(Shader::sourceBuffer, Shader::bufferSize);
         testStream.close();
 
@@ -46,11 +49,11 @@ void ShaderInit()
         if (!success)
         {
             glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cout << shader->name << " vertex shader compilation failed!\n" << infoLog << std::endl;
         }
 
         std::fill_n(Shader::sourceBuffer, Shader::bufferSize, '\0');
-        testStream.open(shader->fragLocation);
+        testStream.open(shader->name + fragFileAppend);
         testStream.read(Shader::sourceBuffer, Shader::bufferSize);
         testStream.close();
 
@@ -63,8 +66,9 @@ void ShaderInit()
         if (!success)
         {
             glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cout << shader->name << " fragment shader compilation failed!\n" << infoLog << std::endl;
         }
+        
 
         shader->program = glCreateProgram();
 
@@ -76,7 +80,7 @@ void ShaderInit()
         if (!success)
         {
             glGetProgramInfoLog(shader->program, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cout << shader->name << " shader program compilation failed!\n" << infoLog << std::endl;
         }
 
         glDeleteShader(vertexShader);

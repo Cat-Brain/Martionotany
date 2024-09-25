@@ -3,8 +3,8 @@
 
 void FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
-    glViewport(0, 0, width, height);
     screenDim = ivec2(width, height);
+    FramebufferResize();
 }
 
 void WindowInit()
@@ -45,7 +45,4 @@ void WindowUpdate()
     currentTime = newTime;
 
     glfwSwapBuffers(window);
-
-    glClearColor(0.3f, 0.3f, 0.6f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
 }

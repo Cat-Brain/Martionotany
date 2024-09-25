@@ -14,6 +14,8 @@ public:
 	}
 };
 
+#define NewComponent(Name) class Name : public BaseComponent
+
 union Component;
 class Entity;
 
