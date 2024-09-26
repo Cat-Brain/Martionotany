@@ -3,9 +3,9 @@ layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aUV;
 
 uniform mat4 camera;
-uniform vec4 posScale;
+uniform mat3 transform;
 
 void main()
 {
-    gl_Position = camera * vec4(aPos * posScale.zw + posScale.xy, .5, 1.0);
+    gl_Position = camera * vec4(transform * vec3(aPos, 1), 1.0);
 }

@@ -219,11 +219,22 @@ public:
         shader(shader), mesh(mesh), color(color), renderLayer(renderLayer) { SET_HASH; }
 };
 
-class MeshScale : public BaseComponent
+class Scale : public BaseComponent
 {
 public:
     vec2 scale;
 
-    MeshScale(vec2 scale = vec2(1)):
+    Scale(vec2 scale = vec2(1)):
         scale(scale) { SET_HASH; }
+};
+
+class Rotation : public BaseComponent
+{
+public:
+    float rotation;
+
+    Rotation(float rotation = 0) :
+        rotation(rotation) {
+        SET_HASH;
+    }
 };

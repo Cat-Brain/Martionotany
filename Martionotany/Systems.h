@@ -71,6 +71,28 @@ SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ {HASH(
 	}
 }
 
+SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(InfinitePhysicsWall)},
+	CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsAABB)}) }), Update)
+{
+	for (vector<Component*> wallEntity : components[0])
+	{
+		InfinitePhysicsWall& wall = wallEntity[0]->infinitePhysicsWall;
+		for (vector<Component*> circleEntity : components[1])
+		{
+			Position& pos = circleEntity[0]->position;
+			PhysicsBody& body = circleEntity[1]->physicsBody;
+			PhysicsAABB& aabb = circleEntity[2]->physicsAABB;
+
+			float height = glm::dot(wall.normal, pos.pos) - aabb.dimensions.x * 2;
+			if (height > wall.height)
+				continue;
+
+			pos.pos += (wall.height - height) * wall.normal;
+			body.vel -= std::min(0.f, glm::dot(wall.normal, body.vel)) * wall.normal;
+		}
+	}
+}
+
 SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }, Update)
 {
 	for (int i = 0; i < (int)components[0].size() - 1; i++)
@@ -141,7 +163,7 @@ SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompList({ HASH(Position), HASH
 		}
 	}
 }*/
-SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)}, CompList({HASH(MeshRenderer), HASH(MeshScale), HASH(Position)})}), Update)
+SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)}, CompList({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)})}), Update)
 {
 	for (vector<Component*> cameraEntity : components[0])
 	{
@@ -154,12 +176,18 @@ SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)}, CompList({HA
 			MeshRenderer& meshRenderer = meshEntity[0]->meshRenderer;
 			if ((camera.renderMask & static_cast<byte>(meshRenderer.renderLayer)) == 0)
 				continue;
-			MeshScale& meshScale = meshEntity[1]->meshScale;
-			Position& pos = meshEntity[2]->position;
+			Position& pos = meshEntity[1]->position;
+			Scale& scale = meshEntity[2]->scale;
+			Rotation& rotation = meshEntity[3]->rotation;
+			
+			mat3 transform = glm::identity<mat3>();
+			transform = glm::translate(transform, pos.pos);
+			transform = glm::rotate(transform, glm::radians(rotation.rotation));
+			transform = glm::scale(transform, scale.scale * 0.5f);
 
 			glUseProgram(meshRenderer.shader.program);
-			glUniform4f(glGetUniformLocation(meshRenderer.shader.program, "posScale"),
-				pos.pos.x, pos.pos.y, meshScale.scale.x * 0.5f, meshScale.scale.y * 0.5f);
+			glUniformMatrix3fv(glGetUniformLocation(meshRenderer.shader.program, "transform"),
+				1, GL_FALSE, glm::value_ptr(transform));
 			glUniform4f(glGetUniformLocation(meshRenderer.shader.program, "color"),
 				meshRenderer.color.r, meshRenderer.color.g, meshRenderer.color.b, meshRenderer.color.a);
 			meshRenderer.mesh.Draw();

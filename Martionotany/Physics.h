@@ -30,6 +30,15 @@ public:
 		radius(radius) { SET_HASH; }
 };
 
+class PhysicsAABB : public BaseComponent
+{
+public:
+	vec2 dimensions;
+
+	PhysicsAABB(vec2 dimensions) :
+		dimensions(dimensions) { SET_HASH; }
+};
+
 class InfinitePhysicsWall : public BaseComponent
 {
 public:

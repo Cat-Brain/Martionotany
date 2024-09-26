@@ -38,3 +38,8 @@ vec2 TrySubVec2(const vec2 original, const float subtractional)
 		return result;
 	return vec2(0);
 }
+
+vec2 ToGrid(vec2 pos)
+{
+	return glm::round(pos * (float)pixelsPerUnit) / (float)pixelsPerUnit;
+}

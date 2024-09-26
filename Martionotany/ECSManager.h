@@ -12,11 +12,13 @@ union Component
 {
 	TYPE(BaseComponent, base);
 	TYPE(MeshRenderer, meshRenderer);
-	TYPE(MeshScale, meshScale);
+	TYPE(Scale, scale);
+	TYPE(Rotation, rotation);
 	TYPE(Camera, camera);
 	TYPE(Position, position);
 	TYPE(PhysicsBody, physicsBody);
 	TYPE(PhysicsCircle, physicsCircle);
+	TYPE(PhysicsAABB, physicsAABB);
 	TYPE(InfinitePhysicsWall, infinitePhysicsWall);
 	TYPE(Gravity, gravity);
 	TYPE(Player, player);

@@ -27,12 +27,14 @@ int main()
     // Entities:
     ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT) }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
-        Position({0, 0}), MeshScale(), Player(ecs.GetEntityReversed(0).components[0].position, 10, 2, 5),}));
+        Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsCircle(0.5f), Gravity(), Player(ecs.GetEntityReversed(0).components[0].position, 10, 2, 5)}));
 
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
-        Position({3, 0}), MeshScale()}));
+        Position({3, 0}), Scale(), Rotation() }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
-        Position({5, 0}), MeshScale()}));
+        Position({5, 0}), Scale(), Rotation() }));
+
+    ecs.AddEntity(Entity({ InfinitePhysicsWall(Vec::up, -0.5f) }));
 
     // Program Execution:
     ecs.Start();
