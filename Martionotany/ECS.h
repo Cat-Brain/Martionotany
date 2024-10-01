@@ -32,16 +32,50 @@ enum CallRelativity
 typedef vector<type_index> CompList;
 typedef vector<CompList> SysReq;
 
+class GenericSystem
+{
+public:
+	function<void()> fun;
+	CallRelativity callRelativity;
+	static vector<GenericSystem*> startups, updates, closes, systems;
+
+	GenericSystem(function<void()> fun, CallRelativity callRelativity, SystemCall systemCall) :
+		fun(fun), callRelativity(callRelativity)
+	{
+		systems.push_back(this);
+		switch (systemCall)
+		{
+		case Start:
+			startups.push_back(this);
+			break;
+		case Update:
+			updates.push_back(this);
+			break;
+		case Close:
+			closes.push_back(this);
+			break;
+		default:
+			cout << "WARNING: System Call Invalid!!!\n";
+			break;
+		}
+	}
+};
+vector<GenericSystem*> GenericSystem::startups{}, GenericSystem::updates{}, GenericSystem::closes{}, GenericSystem::systems{};
+
+#define GENERIC_SYSTEM(name1, name2, callRelativity, systemCall) void name1(); \
+GenericSystem name2(name1, callRelativity, systemCall); \
+void name1()
+
+
 class ECS;
 class System
 {
 public:
 	static vector<System*> startups, updates, closes, systems;
-	static vector<pair<function<void()>, CallRelativity>> startupGenerics, updateGenerics, closeGenerics;
 
 	SysReq requirements; // <- Values are the hash_codes of components
 	function<void(vector<vector<vector<Component*>>>)> fun;
-	vector<vector<std::pair<uint, vector<ushort>>>> entities;
+	vector<vector<tuple<uint, uint, vector<ushort>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
 	bool enabled;
 
 	System(SysReq requirements, function<void(vector<vector<vector<Component*>>>)> fun, SystemCall call, bool enabled = true) :
@@ -51,13 +85,13 @@ public:
 		switch (call)
 		{
 		case Start:
-			System::startups.push_back(this);
+			startups.push_back(this);
 			break;
 		case Update:
-			System::updates.push_back(this);
+			updates.push_back(this);
 			break;
 		case Close:
-			System::closes.push_back(this);
+			closes.push_back(this);
 			break;
 		default:
 			cout << "WARNING: System Call Invalid!!!\n";
@@ -68,7 +102,6 @@ public:
 	void Run(ECS* ecs);
 };
 vector<System*> System::startups{}, System::updates{}, System::closes{}, System::systems{};
-vector<pair<function<void()>, CallRelativity>> System::startupGenerics{}, System::updateGenerics{}, System::closeGenerics{};
 
 #define SYSTEM(name1, name2, requirements, call) void name1(vector<vector<vector<Component*>>> components); \
 System name2(requirements, name1, call); \

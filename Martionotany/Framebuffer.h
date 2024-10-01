@@ -116,7 +116,7 @@ public:
 vector<Framebuffer*> Framebuffer::framebuffers = vector<Framebuffer*>();
 Framebuffer mainFramebuffer(pixelsPerUnit, 5);
 
-void FramebufferInit()
+GENERIC_SYSTEM(FramebufferInit, framebufferInit, After, Start)
 {
 	for (Framebuffer* framebuffer : Framebuffer::framebuffers)
 		framebuffer->Init();
@@ -128,7 +128,7 @@ void FramebufferResize()
 		framebuffer->Resize();
 }
 
-void RenderToFramebuffer()
+GENERIC_SYSTEM(RenderToFramebuffer, renderToFramebuffer, Before, Update)
 {
 	mainFramebuffer.Bind();
 
@@ -136,7 +136,7 @@ void RenderToFramebuffer()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void RenderToScreen()
+GENERIC_SYSTEM(RenderToScreen, renderToScreen, After, Update)
 {
 	Framebuffer::BindScreen();
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
@@ -153,7 +153,7 @@ void RenderToScreen()
 	quadMesh.Draw();
 }
 
-void FramebufferTerminate()
+GENERIC_SYSTEM(FramebufferTerminate, framebufferTerminate, After, Close)
 {
 	for (Framebuffer* framebuffer : Framebuffer::framebuffers)
 		framebuffer->Terminate();

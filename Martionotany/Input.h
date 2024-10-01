@@ -3,17 +3,35 @@
 
 namespace Input
 {
+	enum KeyType
+	{
+		Keyboard, Mouse
+	};
+
 	struct Key
 	{
 	public:
 		int keycode;
+		KeyType keyType;
 		bool pressed = false, held = false, released = false;
 
-		Key(int keycode);
+		Key(int keycode, KeyType keyType = Keyboard);
 
 		void Update()
 		{
-			bool nowHeld = glfwGetKey(window, keycode) == GLFW_PRESS;
+			bool nowHeld;
+			// Maybe should be made to a start switch instead of a update switch
+			switch (keyType)
+			{
+			case Keyboard:
+				nowHeld = glfwGetKey(window, keycode) == GLFW_PRESS;
+				break;
+			case Mouse:
+				nowHeld = glfwGetMouseButton(window, keycode) == GLFW_PRESS;
+				break;
+			default:
+				return;
+			};
 			pressed = nowHeld && !held;
 			released = !nowHeld && held;
 			held = nowHeld;
@@ -22,16 +40,18 @@ namespace Input
 
 	vector<Key*> keys = vector<Key*>(0);
 	Key w(GLFW_KEY_W), s(GLFW_KEY_S), d(GLFW_KEY_D), a(GLFW_KEY_A),
-		jump(GLFW_KEY_SPACE), escape(GLFW_KEY_ESCAPE);
+		jump(GLFW_KEY_SPACE), escape(GLFW_KEY_ESCAPE),
+		enterDebug(GLFW_KEY_ENTER),
+		click1(GLFW_MOUSE_BUTTON_1, Mouse), click2(GLFW_MOUSE_BUTTON_2, Mouse);
 
 
-	Key::Key(int keycode) :
-		keycode(keycode)
+	Key::Key(int keycode, KeyType keyType) :
+		keycode(keycode), keyType(keyType)
 	{
 		keys.push_back(this);
 	}
 
-	void UpdateKeys()
+	GENERIC_SYSTEM(UpdateKeys, updateKeys, Before, Update)
 	{
 		for (Key* key : keys)
 			key->Update();

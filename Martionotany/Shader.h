@@ -26,7 +26,7 @@ Shader defaultShader("Default"),
     framebufferShader("Framebuffer");
 
 
-void ShaderInit()
+GENERIC_SYSTEM(ShaderInit, shaderInit, After, Start)
 {
     std::ifstream testStream;
 
@@ -88,7 +88,7 @@ void ShaderInit()
     }
 }
 
-void ShaderTerminate()
+GENERIC_SYSTEM(ShaderTerminate, shaderTerminate, After, Close)
 {
     for (Shader* shader : Shader::shaders)
         glDeleteProgram(shader->program);

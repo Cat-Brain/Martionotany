@@ -193,7 +193,7 @@ TMesh quadMesh = TMesh({
         1, 2, 3
     });
 
-void MeshInit()
+GENERIC_SYSTEM(MeshInit, meshInit, After, Start)
 {
     for (VMesh* vMesh : vMeshes)
         vMesh->Init();
@@ -201,7 +201,7 @@ void MeshInit()
         tMesh->Init();
 }
 
-void MeshTerminate()
+GENERIC_SYSTEM(MeshTerminate, meshTerminate, After, Close)
 {
     triMesh.Terminate();
     quadMesh.Terminate();

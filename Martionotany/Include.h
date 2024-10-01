@@ -9,12 +9,15 @@
 #include <typeindex>
 
 // STL Usings:
+using std::min;
+using std::max;
 using std::cout;
 using std::vector;
 using std::function;
 using std::string;
 using std::pair;
 using std::tuple;
+using std::get;
 using std::type_index;
 
 // Include Directory Includes:

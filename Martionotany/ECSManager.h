@@ -18,7 +18,7 @@ union Component
 	TYPE(Position, position);
 	TYPE(PhysicsBody, physicsBody);
 	TYPE(PhysicsCircle, physicsCircle);
-	TYPE(PhysicsAABB, physicsAABB);
+	TYPE(PhysicsBox, physicsBox);
 	TYPE(InfinitePhysicsWall, infinitePhysicsWall);
 	TYPE(Gravity, gravity);
 	TYPE(Player, player);
@@ -29,7 +29,7 @@ class Entity
 public:
 	bool firstFrame;
 	vector<Component> components;
-	vector<int> systems;
+	vector<tuple<System*, uint, uint>> systems; // [System, Outer Index (Which entity parameter this meets), Inner Index (Which entity is this)
 
 	Entity(vector<Component> components, bool firstFrame = true) :
 		firstFrame(firstFrame), components(components), systems{} { }
@@ -67,19 +67,32 @@ public:
 			for (int i = 0; i < system->requirements.size(); i++)
 				if (entity.HasComponents(system->requirements[i]))
 				{
+					// Add entity to system:
 					uint index = static_cast<uint>(system->entities[i].size());
-					system->entities[i].push_back({ entityId, vector<ushort>(system->requirements[i].size())});
+					system->entities[i].push_back({ entityId, entity.systems.size(), vector<ushort>(system->requirements[i].size())});
 					for (int j = 0; j < system->requirements[i].size(); j++)
 						for (uint k = 0; k < entity.components.size(); k++)
 							if (entity.components[k].base.hash_code == system->requirements[i][j])
 							{
-								system->entities[i][index].second[j] = k;
+								get<2>(system->entities[i][index])[j] = k;
 								break;
 							}
 
-					// Add stuff to add systems onto entities instead of just entities onto systems
+					// Save system and index in entity:
+					entity.systems.push_back({ system, i, index });
 				}
+	}
 
+	void RemoveEntity(uint index)
+	{
+		Entity& entity = entities[index];
+
+		for (auto& [system, outerIndex, innerIndex] : entity.systems)
+		{
+			system->entities.erase(system->entities.begin() + innerIndex);
+			for (int i = innerIndex; i < system->entities.size(); i++)
+				get<2>(entities[get<0>(system->entities[outerIndex][i])].systems[get<1>(system->entities[outerIndex][i])])--;
+		}
 	}
 
 	Entity& GetEntity(int index)
@@ -101,38 +114,38 @@ public:
 
 	void Start()
 	{
-		for (pair<function<void()>, CallRelativity>& func : System::startupGenerics)
-			if (func.second == Before)
-				func.first();
+		for (GenericSystem* func : GenericSystem::startups)
+			if (func->callRelativity == Before)
+				func->fun();
 		for (System* system : System::startups)
 			system->Run(this);
-		for (pair<function<void()>, CallRelativity>& func : System::startupGenerics)
-			if (func.second == After)
-				func.first();
+		for (GenericSystem* func : GenericSystem::startups)
+			if (func->callRelativity == After)
+				func->fun();
 	}
 
 	void Update()
 	{
-		for (pair<function<void()>, CallRelativity>& func : System::updateGenerics)
-			if (func.second == Before)
-				func.first();
+		for (GenericSystem* func : GenericSystem::updates)
+			if (func->callRelativity == Before)
+				func->fun();
 		for (System* system : System::updates)
 			system->Run(this);
-		for (pair<function<void()>, CallRelativity>& func : System::updateGenerics)
-			if (func.second == After)
-				func.first();
+		for (GenericSystem* func : GenericSystem::updates)
+			if (func->callRelativity == After)
+				func->fun();
 	}
 
 	void Close()
 	{
-		for (pair<function<void()>, CallRelativity>& func : System::closeGenerics)
-			if (func.second == Before)
-				func.first();
+		for (GenericSystem* func : GenericSystem::closes)
+			if (func->callRelativity == Before)
+				func->fun();
 		for (System* system : System::closes)
 			system->Run(this);
-		for (pair<function<void()>, CallRelativity>& func : System::closeGenerics)
-			if (func.second == After)
-				func.first();
+		for (GenericSystem* func : GenericSystem::closes)
+			if (func->callRelativity == After)
+				func->fun();
 	}
 };
 
@@ -145,10 +158,10 @@ void System::Run(ECS* ecs)
 
 		for (int j = 0; j < entities[i].size(); j++)
 		{
-			Entity& entity = ecs->GetEntity(entities[i][j].first);
+			Entity& entity = ecs->GetEntity(get<0>(entities[i][j]));
 			inputs[i][j] = vector<Component*>(requirements[i].size());
 			for (int k = 0; k < requirements[i].size(); k++)
-				inputs[i][j][k] = &entity.components[entities[i][j].second[k]];
+				inputs[i][j][k] = &entity.components[get<2>(entities[i][j])[k]];
 		}
 	}
 	fun(inputs);

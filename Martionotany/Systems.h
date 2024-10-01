@@ -2,7 +2,7 @@
 #include "Window.h"
 #include "Input.h"
 
-#pragma region Physics
+#pragma region Early Physics
 
 SYSTEM(UpdateGravity, updateGravity, { CompList({ HASH(PhysicsBody), HASH(Gravity) }) }, Update)
 {
@@ -12,6 +12,23 @@ SYSTEM(UpdateGravity, updateGravity, { CompList({ HASH(PhysicsBody), HASH(Gravit
 		Gravity& gravity = entity[1]->gravity;
 
 		body.vel += deltaTime * defaultGravity * gravity.multiplier * gravity.direction;
+	}
+}
+
+#pragma endregion
+
+#pragma region Game Stuff
+
+SYSTEM(PlayerClickTest, playerClickTest, { CompList({ HASH(Position), HASH(Player) }) }, Update)
+{
+	if (!Input::click1.held)
+		return;
+	for (vector<Component*> entity : components[0])
+	{
+		Position& position = entity[0]->position;
+		Player& player = entity[1]->player;
+
+
 	}
 }
 
@@ -37,6 +54,10 @@ SYSTEM(PlayerMove, playerMove, { CompList({ HASH(PhysicsBody), HASH(Player) }) }
 			physicsBody.vel.y += player.jumpForce;
 	}
 }
+
+#pragma endregion
+
+#pragma region Physics
 
 SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { CompList({HASH(Position), HASH(PhysicsBody)}) }, Update)
 {
@@ -66,13 +87,13 @@ SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ {HASH(
 				continue;
 
 			pos.pos += (wall.height - height) * wall.normal;
-			body.vel -= std::min(0.f, glm::dot(wall.normal, body.vel)) * wall.normal;
+			body.vel -= min(0.f, glm::dot(wall.normal, body.vel)) * wall.normal;
 		}
 	}
 }
 
 SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(InfinitePhysicsWall)},
-	CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsAABB)}) }), Update)
+	CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsBox)}) }), Update)
 {
 	for (vector<Component*> wallEntity : components[0])
 	{
@@ -81,14 +102,26 @@ SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(Infi
 		{
 			Position& pos = circleEntity[0]->position;
 			PhysicsBody& body = circleEntity[1]->physicsBody;
-			PhysicsAABB& aabb = circleEntity[2]->physicsAABB;
+			PhysicsBox& box = circleEntity[2]->physicsBox;
 
-			float height = glm::dot(wall.normal, pos.pos) - aabb.dimensions.x * 2;
+			vec2 right = vec2(cos(box.rotation), sin(box.rotation));
+			vec2 up = vec2(-right.y, right.x);
+
+			vec2 corners[4] = {
+				pos.pos + box.dimensions * -0.5f,
+				pos.pos + box.dimensions * vec2(-0.5f, 0.5f),
+				pos.pos + box.dimensions * vec2(0.5f, -0.5f),
+				pos.pos + box.dimensions * 0.5f
+			};
+			
+			float height = 99999;
+			for (int i = 0; i < 4; i++)
+				height = min(height, glm::dot(wall.normal, corners[i]));
 			if (height > wall.height)
 				continue;
 
 			pos.pos += (wall.height - height) * wall.normal;
-			body.vel -= std::min(0.f, glm::dot(wall.normal, body.vel)) * wall.normal;
+			body.vel -= min(0.f, glm::dot(wall.normal, body.vel)) * wall.normal;
 		}
 	}
 }

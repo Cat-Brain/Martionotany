@@ -30,13 +30,14 @@ public:
 		radius(radius) { SET_HASH; }
 };
 
-class PhysicsAABB : public BaseComponent
+class PhysicsBox : public BaseComponent
 {
 public:
 	vec2 dimensions;
+	float rotation;
 
-	PhysicsAABB(vec2 dimensions) :
-		dimensions(dimensions) { SET_HASH; }
+	PhysicsBox(vec2 dimensions = vec2(1), float rotation = 0) :
+		dimensions(dimensions), rotation(rotation) { SET_HASH; }
 };
 
 class InfinitePhysicsWall : public BaseComponent

@@ -7,7 +7,7 @@ void FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
     FramebufferResize();
 }
 
-void WindowInit()
+GENERIC_SYSTEM(WindowInit, windowInit, Before, Start)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -33,12 +33,12 @@ void WindowInit()
     glfwSetFramebufferSizeCallback(window, FrameBufferSizeCallback);
 }
 
-void WindowTerminate()
+GENERIC_SYSTEM(WindowTerminate, windowTerminate, After, Close)
 {
     glfwTerminate();
 }
 
-void WindowUpdate()
+GENERIC_SYSTEM(WindowUpdate, windowUpdate, Before, Update)
 {
     float newTime = static_cast<float>(glfwGetTime());
     deltaTime = newTime - currentTime;
