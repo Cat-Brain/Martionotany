@@ -7,10 +7,10 @@ int main()
     ECS ecs;
     
     // Entities:
-    ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT) }));
+    Entity& camera = ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT) }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
-        Player(ecs.GetEntityReversed(0).components[0].position, 10, 2, 5)}));
+        Player(camera.GetComponent<Position>().position, 10, 2, 5)}));
 
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
         Position({3, 0}), Scale(), Rotation() }));
@@ -39,6 +39,6 @@ int main()
 /*
 To Do:
     Make resources all be in a folder such that they are easier to manage and organize
-    Complete ECS
-    Move starting implementations into ECS instead of normal functions for consistency
+    Add basic support for UI
+    Add basic support for Audio
 */

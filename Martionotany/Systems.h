@@ -178,24 +178,6 @@ SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompList({ HASH(Position), HASH
 	}
 }
 
-/*SYSTEM(MeshRendererUpdate, meshRendererUpdate, SysReq({{HASH(Camera)}, {HASH(MeshRenderer)}}), Update)
-{
-	for (vector<Component*> cameraEntity : components[0])
-	{
-		Camera& camera = cameraEntity[0]->camera;
-		glUseProgram(camera.shader.program);
-		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camera.matrix));
-
-		for (vector<Component*> meshEntity : components[1])
-		{
-			MeshRenderer& meshRenderer = meshEntity[0]->meshRenderer;
-			glUseProgram(meshRenderer.shader.program);
-			glUniform4f(glGetUniformLocation(meshRenderer.shader.program, "color"),
-				meshRenderer.color.r, meshRenderer.color.g, meshRenderer.color.b, meshRenderer.color.a);
-			meshRenderer.mesh.Draw();
-		}
-	}
-}*/
 SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)}, CompList({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)})}), Update)
 {
 	for (vector<Component*> cameraEntity : components[0])

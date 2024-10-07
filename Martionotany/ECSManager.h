@@ -34,9 +34,9 @@ public:
 	Entity(vector<Component> components, bool firstFrame = true) :
 		firstFrame(firstFrame), components(components), systems{} { }
 
-	bool HasComponents(vector<type_index>& requirements)
+	bool HasComponents(vector<CHash>& requirements)
 	{
-		for (type_index requirement : requirements)
+		for (CHash requirement : requirements)
 		{
 			bool invalid = true;
 			for (Component& component : components)
@@ -50,6 +50,21 @@ public:
 		}
 		return true;
 	}
+
+	Component& GetComponent(CHash desired)
+	{
+		for (Component& component : components)
+			if (component.base.hash_code == desired)
+				return component;
+		assert(false);
+		return components[0];
+	}
+
+	template <typename T>
+	Component& GetComponent()
+	{
+		return GetComponent(HASH(T));
+	}
 };
 
 class ECS
@@ -59,7 +74,7 @@ protected:
 	vector<Entity> entities;
 
 public:
-	void AddEntity(Entity&& entity)
+	Entity& AddEntity(Entity&& entity)
 	{
 		uint entityId = static_cast<uint>(entities.size());
 		entities.push_back(entity);
@@ -81,6 +96,7 @@ public:
 					// Save system and index in entity:
 					entity.systems.push_back({ system, i, index });
 				}
+		return entities[entities.size() - 1];
 	}
 
 	void RemoveEntity(uint index)

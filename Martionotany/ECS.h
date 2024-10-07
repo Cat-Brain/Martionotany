@@ -1,12 +1,12 @@
 #pragma once
 #include "Math.h"
 
-#define HASH(x) (type_index(typeid(x)))
+#define HASH(x) (CHash(typeid(x)))
 #define SET_HASH (hash_code = HASH(*this))
 class BaseComponent
 {
 public:
-	type_index hash_code = HASH(0);
+	CHash hash_code = HASH(0);
 
 	bool Cmp(const BaseComponent& other) const
 	{
@@ -29,7 +29,7 @@ enum CallRelativity
 	Before, After
 };
 
-typedef vector<type_index> CompList;
+typedef vector<CHash> CompList;
 typedef vector<CompList> SysReq;
 
 class GenericSystem

@@ -47,6 +47,8 @@ typedef unsigned int uint;
 typedef unsigned short ushort;
 typedef uint8_t byte;
 
+typedef type_index CHash; // Component hash
+
 // Global Variables That I Don't Know Where to Put:
 
 ivec2 screenDim = ivec2(800, 600);
