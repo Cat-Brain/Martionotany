@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS.h"
 
-class Position : public BaseComponent
+NewComponent(Position)
 {
 public:
 	vec2 pos;
@@ -11,7 +11,7 @@ public:
 };
 
 // Requires Position
-class PhysicsBody : public BaseComponent
+NewComponent(PhysicsBody)
 {
 public:
 	float mass;
@@ -28,9 +28,14 @@ public:
 
 	PhysicsCircle(float radius) :
 		radius(radius) { SET_HASH; }
+
+	bool Overlaps(vec2 relPos)
+	{
+		return glm::length2(relPos) <= radius * radius;
+	}
 };
 
-class PhysicsBox : public BaseComponent
+NewComponent(PhysicsBox)
 {
 public:
 	vec2 dimensions;
@@ -40,7 +45,7 @@ public:
 		dimensions(dimensions), rotation(rotation) { SET_HASH; }
 };
 
-class InfinitePhysicsWall : public BaseComponent
+NewComponent(InfinitePhysicsWall)
 {
 public:
 	vec2 normal;
@@ -51,7 +56,7 @@ public:
 };
 
 constexpr float defaultGravity = 10;
-class Gravity : public BaseComponent
+NewComponent(Gravity)
 {
 public:
 	float multiplier;
@@ -59,4 +64,21 @@ public:
 
 	Gravity(float multiplier = 1, vec2 direction = Vec::down):
 		multiplier(multiplier), direction(direction) { SET_HASH; }
+};
+
+// Requires some collider to function properly
+NewComponent(MouseInteractable)
+{
+public:
+	bool pressed, held, released;
+
+	MouseInteractable():
+		pressed(false), held(false), released(false) { SET_HASH; }
+
+	void Update(bool hovered)
+	{
+		released = Input::click1.released && hovered && held;
+		pressed = Input::click1.pressed && hovered;
+		held = pressed || (held && Input::click1.held && hovered);
+	}
 };

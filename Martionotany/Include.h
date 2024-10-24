@@ -55,6 +55,8 @@ ivec2 screenDim = ivec2(800, 600);
 float currentTime = 0, deltaTime = 0;
 GLFWwindow* window;
 constexpr int pixelsPerUnit = 8;
+bool inDebug = false;
+bool windowDecorated = false, windowFloating = true;
 
 namespace Vec
 {
@@ -64,12 +66,57 @@ namespace Vec
 // Random Functions That I Don't Know Where to Put:
 namespace std
 {
+    inline std::string to_string(const vec4& a) {
+        return std::format("({}, {}, {}, {})", a.x, a.y, a.z, a.w);
+    }
+    inline std::string to_string(const vec3& a) {
+        return std::format("({}, {}, {})", a.x, a.y, a.z);
+    }
     inline std::string to_string(const vec2& a) {
+        return std::format("({}, {})", a.x, a.y);
+    }
+    inline std::string to_string(const ivec4& a) {
+        return std::format("({}, {}, {}, {})", a.x, a.y, a.z, a.w);
+    }
+    inline std::string to_string(const ivec3& a) {
+        return std::format("({}, {}, {})", a.x, a.y, a.z);
+    }
+    inline std::string to_string(const ivec2& a) {
         return std::format("({}, {})", a.x, a.y);
     }
 }
 
+inline std::ostream& operator<<(std::ostream& os, const vec4& a)
+{
+    os << std::to_string(a);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const vec3& a)
+{
+    os << std::to_string(a);
+    return os;
+}
+
 inline std::ostream& operator<<(std::ostream& os, const vec2& a)
+{
+    os << std::to_string(a);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const ivec4& a)
+{
+    os << std::to_string(a);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const ivec3& a)
+{
+    os << std::to_string(a);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const ivec2& a)
 {
     os << std::to_string(a);
     return os;

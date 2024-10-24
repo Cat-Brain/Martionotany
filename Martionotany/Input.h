@@ -40,9 +40,12 @@ namespace Input
 
 	vector<Key*> keys = vector<Key*>(0);
 	Key w(GLFW_KEY_W), s(GLFW_KEY_S), d(GLFW_KEY_D), a(GLFW_KEY_A),
-		jump(GLFW_KEY_SPACE), escape(GLFW_KEY_ESCAPE),
+		jump(GLFW_KEY_SPACE), sprint(GLFW_KEY_LEFT_SHIFT), walk(GLFW_KEY_LEFT_CONTROL),
+		escape(GLFW_KEY_ESCAPE),
 		enterDebug(GLFW_KEY_ENTER),
 		click1(GLFW_MOUSE_BUTTON_1, Mouse), click2(GLFW_MOUSE_BUTTON_2, Mouse);
+
+	vec2 pixMousePos, screenMousePos;
 
 
 	Key::Key(int keycode, KeyType keyType) :
@@ -58,5 +61,19 @@ namespace Input
 
 		if (escape.held)
 			glfwSetWindowShouldClose(window, true);
+	}
+
+	GENERIC_SYSTEM(UpdateInDebug, updateInDebug, Before, Update)
+	{
+		inDebug ^= enterDebug.pressed;
+	}
+
+	SYSTEM(UpdateMouse, updateMouse, { {} }, Update)
+	{
+		double xPos, yPos;
+		glfwGetCursorPos(window, &xPos, &yPos);
+
+		pixMousePos = vec2(xPos, yPos);
+		screenMousePos = vec2(pixMousePos.x / (screenDim.x - 1), (screenDim.y - 1 - pixMousePos.y) / (screenDim.y - 1));
 	}
 }

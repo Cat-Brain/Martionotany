@@ -2,25 +2,30 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "Framebuffer.h"
+#include "UI.h"
 #include "Player.h"
 
 #define TYPE(type, name) type name; \
 Component(type&& name) : \
-	name(name) { }
+	name(name) { } \
+operator type&() { return name; }
 
 union Component
 {
 	TYPE(BaseComponent, base);
 	TYPE(MeshRenderer, meshRenderer);
+	TYPE(Position, position);
 	TYPE(Scale, scale);
 	TYPE(Rotation, rotation);
 	TYPE(Camera, camera);
-	TYPE(Position, position);
+	TYPE(CameraMouse, cameraMouse);
+	TYPE(FollowCursor, followCursor);
 	TYPE(PhysicsBody, physicsBody);
 	TYPE(PhysicsCircle, physicsCircle);
 	TYPE(PhysicsBox, physicsBox);
 	TYPE(InfinitePhysicsWall, infinitePhysicsWall);
 	TYPE(Gravity, gravity);
+	TYPE(MouseInteractable, mouseInteractable);
 	TYPE(Player, player);
 };
 
@@ -61,9 +66,9 @@ public:
 	}
 
 	template <typename T>
-	Component& GetComponent()
+	T& GetComponent()
 	{
-		return GetComponent(HASH(T));
+		return (T&)GetComponent(HASH(T));
 	}
 };
 
@@ -74,7 +79,7 @@ protected:
 	vector<Entity> entities;
 
 public:
-	Entity& AddEntity(Entity&& entity)
+	int AddEntity(Entity&& entity)
 	{
 		uint entityId = static_cast<uint>(entities.size());
 		entities.push_back(entity);
@@ -84,7 +89,7 @@ public:
 				{
 					// Add entity to system:
 					uint index = static_cast<uint>(system->entities[i].size());
-					system->entities[i].push_back({ entityId, entity.systems.size(), vector<ushort>(system->requirements[i].size())});
+					system->entities[i].push_back({ entityId, static_cast<uint>(entity.systems.size()), vector<ushort>(system->requirements[i].size())});
 					for (int j = 0; j < system->requirements[i].size(); j++)
 						for (uint k = 0; k < entity.components.size(); k++)
 							if (entity.components[k].base.hash_code == system->requirements[i][j])
@@ -96,7 +101,7 @@ public:
 					// Save system and index in entity:
 					entity.systems.push_back({ system, i, index });
 				}
-		return entities[entities.size() - 1];
+		return static_cast<int>(entities.size() - 1);
 	}
 
 	void RemoveEntity(uint index)

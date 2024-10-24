@@ -231,6 +231,7 @@ public:
 class Rotation : public BaseComponent
 {
 public:
+    // In degrees
     float rotation;
 
     Rotation(float rotation = 0) :

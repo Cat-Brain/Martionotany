@@ -7,15 +7,19 @@ int main()
     ECS ecs;
     
     // Entities:
-    Entity& camera = ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT) }));
+    int cameraIndex = ecs.AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT),
+        CameraMouse() }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
-        Player(camera.GetComponent<Position>().position, 10, 2, 5)}));
+        Player(ecs.GetEntity(cameraIndex).GetComponent<Position>(), 10, 2, 5)}));
 
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
         Position({3, 0}), Scale(), Rotation() }));
     ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
         Position({5, 0}), Scale(), Rotation() }));
+
+    ecs.AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
+        Position(), Scale(), Rotation(), FollowCursor(ecs.GetEntity(cameraIndex).GetComponent<CameraMouse>())})); // GetComponent crashing here!!!!!!!!
 
     ecs.AddEntity(Entity({ InfinitePhysicsWall(Vec::up, -0.5f) }));
 

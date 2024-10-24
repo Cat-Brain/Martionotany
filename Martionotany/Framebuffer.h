@@ -83,24 +83,24 @@ public:
 		desiredHeight = ppu * zoom * 2;
 	}
 
-	const int ScaleFactor()
+	int ScaleFactor() const
 	{
-		return static_cast<int>(ceilf(static_cast<float>(screenDim.y / desiredHeight)));
+		return static_cast<int>(ceil(screenDim.y / desiredHeight));
 	}
 
-	ivec2 FindDim()
+	ivec2 FindDim() const
 	{
 		int factor = ScaleFactor();
-		return ivec2(ceil(static_cast<float>(screenDim.x / factor)), ceil(static_cast<float>(screenDim.y / factor)));
+		return 2 * ivec2(ceil(0.5f * static_cast<float>(screenDim.x) / factor), ceil(0.5f * static_cast<float>(screenDim.y) / factor));
 	}
 
-	vec2 FindStretch()
+	vec2 FindStretch() const
 	{
 		int factor = ScaleFactor();
 		return vec2(static_cast<float>(screenDim.x) / (factor * dim.x), static_cast<float>(screenDim.y) / (factor * dim.y));
 	}
 
-	const void Bind()
+	void Bind() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glViewport(0, 0, dim.x, dim.y);
@@ -136,25 +136,14 @@ GENERIC_SYSTEM(RenderToFramebuffer, renderToFramebuffer, Before, Update)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-GENERIC_SYSTEM(RenderToScreen, renderToScreen, After, Update)
-{
-	Framebuffer::BindScreen();
-	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, mainFramebuffer.texture);
-
-	glUseProgram(framebufferShader.program);
-	vec2 stretch = mainFramebuffer.FindStretch();
-	glUniform2f(glGetUniformLocation(framebufferShader.program, "stretch"),
-		stretch.x, stretch.y);
-
-	quadMesh.Draw();
-}
-
 GENERIC_SYSTEM(FramebufferTerminate, framebufferTerminate, After, Close)
 {
 	for (Framebuffer* framebuffer : Framebuffer::framebuffers)
 		framebuffer->Terminate();
+}
+
+
+vec2 Camera::CamDim() const
+{
+	return vec2(screenDim) / static_cast<float>(framebuffer->ScaleFactor() * pixelsPerUnit);
 }
