@@ -26,10 +26,10 @@ class PhysicsCircle : public BaseComponent
 public:
 	float radius;
 
-	PhysicsCircle(float radius) :
+	PhysicsCircle(float radius = 0.5f) :
 		radius(radius) { SET_HASH; }
 
-	bool Overlaps(vec2 relPos)
+	bool Overlaps(vec2 relPos) const
 	{
 		return glm::length2(relPos) <= radius * radius;
 	}
@@ -64,21 +64,4 @@ public:
 
 	Gravity(float multiplier = 1, vec2 direction = Vec::down):
 		multiplier(multiplier), direction(direction) { SET_HASH; }
-};
-
-// Requires some collider to function properly
-NewComponent(MouseInteractable)
-{
-public:
-	bool pressed, held, released;
-
-	MouseInteractable():
-		pressed(false), held(false), released(false) { SET_HASH; }
-
-	void Update(bool hovered)
-	{
-		released = Input::click1.released && hovered && held;
-		pressed = Input::click1.pressed && hovered;
-		held = pressed || (held && Input::click1.held && hovered);
-	}
 };

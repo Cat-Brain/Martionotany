@@ -26,6 +26,7 @@ union Component
 	TYPE(InfinitePhysicsWall, infinitePhysicsWall);
 	TYPE(Gravity, gravity);
 	TYPE(MouseInteractable, mouseInteractable);
+	TYPE(InteractableColor, interactableColor);
 	TYPE(Player, player);
 };
 

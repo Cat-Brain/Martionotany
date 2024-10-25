@@ -29,6 +29,7 @@ SYSTEM(UpdateMouse, updateMouse, { CompList({ HASH(Camera), HASH(CameraMouse), H
 
 		mouse.camMousePos = (Input::screenMousePos - vec2(0.5f)) * camera.CamDim();
 		mouse.worldMousePos = mouse.camMousePos + position.pos;
+		mouse.gridMousePos = ToGrid(mouse.worldMousePos);
 	}
 }
 
@@ -41,6 +42,24 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ {HASH(CameraMouse)},
 		for (vector<Component*> circleEntity : components[1])
 			circleEntity[0]->mouseInteractable.Update(circleEntity[1]->physicsCircle.Overlaps(
 				mouse.gridMousePos - circleEntity[2]->position.pos));
+	}
+}
+
+SYSTEM(UpdateInteractableColors, updateInteractableColors,
+	{ CompList({ HASH(InteractableColor), HASH(MouseInteractable), HASH(MeshRenderer) })}, Update)
+{
+	for (vector<Component*> entity : components[0])
+	{
+		InteractableColor& interactableColor = *entity[0];
+		MouseInteractable& mouseInteractable = *entity[1];
+		MeshRenderer& meshRenderer = *entity[2];
+
+		if (mouseInteractable.held)
+			meshRenderer.color = interactableColor.held;
+		else if (mouseInteractable.hovered)
+			meshRenderer.color = interactableColor.hovered;
+		else
+			meshRenderer.color = interactableColor.normal;
 	}
 }
 
