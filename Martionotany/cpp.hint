@@ -1,0 +1,4 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define SYSTEM(name1, name2, requirements, call, __VA_ARGS__) void name1(vector<vector<vector<Component*>>> components); SYSTEM_MACRO_CHOOSER(__VA_ARGS__)(name1, name2, requirements, call, __VA_ARGS__) void name1(vector<vector<vector<Component*>>> components)

@@ -29,7 +29,7 @@ SYSTEM(UpdateMouse, updateMouse, { CompList({ HASH(Camera), HASH(CameraMouse), H
 
 		mouse.camMousePos = (Input::screenMousePos - vec2(0.5f)) * camera.CamDim();
 		mouse.worldMousePos = mouse.camMousePos + position.pos;
-		mouse.gridMousePos = ToGrid(mouse.worldMousePos);
+		mouse.gridMousePos = ToGrid(mouse.worldMousePos) - vec2(0.5f / pixelsPerUnit);
 	}
 }
 
@@ -39,9 +39,21 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ {HASH(CameraMouse)},
 	for (vector<Component*> mouseEntity : components[0])
 	{
 		CameraMouse& mouse = *mouseEntity[0];
-		for (vector<Component*> circleEntity : components[1])
-			circleEntity[0]->mouseInteractable.Update(circleEntity[1]->physicsCircle.Overlaps(
-				mouse.gridMousePos - circleEntity[2]->position.pos));
+		for (vector<Component*> physicsEntity : components[1])
+			physicsEntity[0]->mouseInteractable.Update(physicsEntity[1]->physicsCircle.Overlaps(
+				mouse.gridMousePos - physicsEntity[2]->position.pos));
+	}
+}
+
+SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ {HASH(CameraMouse)},
+	CompList({ HASH(MouseInteractable), HASH(PhysicsBox), HASH(Position), HASH(Rotation)})}), Update)
+{
+	for (vector<Component*> mouseEntity : components[0])
+	{
+		CameraMouse& mouse = *mouseEntity[0];
+		for (vector<Component*> physicsEntity : components[1])
+			physicsEntity[0]->mouseInteractable.Update(physicsEntity[1]->physicsBox.Overlaps(
+				glm::rotate(mouse.gridMousePos - physicsEntity[2]->position.pos, physicsEntity[3]->rotation.rotation)));
 	}
 }
 
@@ -63,6 +75,21 @@ SYSTEM(UpdateInteractableColors, updateInteractableColors,
 	}
 }
 
+SYSTEM(OnInteractUpdate, onInteractUpdate, { CompList({ HASH(MouseInteractable), HASH(OnInteract) }) }, Update)
+{
+	for (vector<Component*> entity : components[0])
+	{
+		MouseInteractable& mouseInteractable = *entity[0];
+		OnInteract& onInteract = *entity[1];
+
+		if (mouseInteractable.pressed && (onInteract.condition == ON_PRESS || onInteract.condition == ON_BOTH))
+			onInteract.onInteract.Run();
+
+		if (mouseInteractable.released && (onInteract.condition == ON_RELEASE || onInteract.condition == ON_BOTH))
+			onInteract.onInteract.Run();
+	}
+}
+
 SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompList({ HASH(FollowCursor), HASH(Position) }) }, Update)
 {
 	for (vector<Component*> entity : components[0])
@@ -71,19 +98,6 @@ SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompList({ HASH(FollowCursor), 
 		Position& position = *entity[1];
 
 		position.pos = followCursor.mouse.worldMousePos;
-	}
-}
-
-SYSTEM(PlayerClickTest, playerClickTest, { CompList({ HASH(Position), HASH(Player) }) }, Update)
-{
-	if (!Input::click1.held)
-		return;
-	for (vector<Component*> entity : components[0])
-	{
-		Position& position = *entity[0];
-		Player& player = *entity[1];
-
-
 	}
 }
 
@@ -153,7 +167,7 @@ SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ {HASH(
 }
 
 SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(InfinitePhysicsWall)},
-	CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsBox)}) }), Update)
+	CompList({HASH(Position), HASH(Rotation), HASH(PhysicsBody), HASH(PhysicsBox)})}), Update)
 {
 	for (vector<Component*> wallEntity : components[0])
 	{
@@ -161,10 +175,11 @@ SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(Infi
 		for (vector<Component*> circleEntity : components[1])
 		{
 			Position& pos = *circleEntity[0];
-			PhysicsBody& body = *circleEntity[1];
-			PhysicsBox& box = *circleEntity[2];
+			Rotation& rotation = *circleEntity[1];
+			PhysicsBody& body = *circleEntity[2];
+			PhysicsBox& box = *circleEntity[3];
 
-			vec2 right = vec2(cos(box.rotation), sin(box.rotation));
+			vec2 right = vec2(cos(rotation.rotation), sin(rotation.rotation));
 			vec2 up = vec2(-right.y, right.x);
 
 			vec2 corners[4] = {
@@ -281,7 +296,7 @@ SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)},
 	}
 }
 
-SYSTEM(RenderToScreen, renderToScreen, { {{}} }, Update)
+SYSTEM(RenderToScreen, renderToScreen, { }, Update)
 {
 	Framebuffer::BindScreen();
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);

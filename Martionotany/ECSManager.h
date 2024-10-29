@@ -27,6 +27,7 @@ union Component
 	TYPE(Gravity, gravity);
 	TYPE(MouseInteractable, mouseInteractable);
 	TYPE(InteractableColor, interactableColor);
+	TYPE(OnInteract, onInteract);
 	TYPE(Player, player);
 };
 
@@ -73,13 +74,10 @@ public:
 	}
 };
 
-class ECS
+namespace ECS
 {
-	friend class System;
-protected:
-	vector<Entity> entities;
+	vector<Entity> entities{};
 
-public:
 	int AddEntity(Entity&& entity)
 	{
 		uint entityId = static_cast<uint>(entities.size());
@@ -140,7 +138,7 @@ public:
 			if (func->callRelativity == Before)
 				func->fun();
 		for (System* system : System::startups)
-			system->Run(this);
+			system->Run();
 		for (GenericSystem* func : GenericSystem::startups)
 			if (func->callRelativity == After)
 				func->fun();
@@ -152,7 +150,7 @@ public:
 			if (func->callRelativity == Before)
 				func->fun();
 		for (System* system : System::updates)
-			system->Run(this);
+			system->Run();
 		for (GenericSystem* func : GenericSystem::updates)
 			if (func->callRelativity == After)
 				func->fun();
@@ -164,14 +162,14 @@ public:
 			if (func->callRelativity == Before)
 				func->fun();
 		for (System* system : System::closes)
-			system->Run(this);
+			system->Run();
 		for (GenericSystem* func : GenericSystem::closes)
 			if (func->callRelativity == After)
 				func->fun();
 	}
 };
 
-void System::Run(ECS* ecs)
+void System::Run()
 {
 	vector<vector<vector<Component*>>> inputs = vector<vector<vector<Component*>>>(requirements.size());
 	for (int i = 0; i < requirements.size(); i++)
@@ -180,7 +178,7 @@ void System::Run(ECS* ecs)
 
 		for (int j = 0; j < entities[i].size(); j++)
 		{
-			Entity& entity = ecs->GetEntity(get<0>(entities[i][j]));
+			Entity& entity = ECS::GetEntity(get<0>(entities[i][j]));
 			inputs[i][j] = vector<Component*>(requirements[i].size());
 			for (int k = 0; k < requirements[i].size(); k++)
 				inputs[i][j][k] = &entity.components[get<2>(entities[i][j])[k]];

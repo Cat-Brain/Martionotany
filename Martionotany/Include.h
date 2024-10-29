@@ -27,6 +27,7 @@ using std::type_index;
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/norm.hpp"
 #include "glm/gtx/matrix_transform_2d.hpp"
+#include "glm/gtx/rotate_vector.hpp"
 #define FAST_OBJ_IMPLEMENTATION
 #include "fast_obj.h"
 

@@ -39,10 +39,15 @@ NewComponent(PhysicsBox)
 {
 public:
 	vec2 dimensions;
-	float rotation;
 
-	PhysicsBox(vec2 dimensions = vec2(1), float rotation = 0) :
-		dimensions(dimensions), rotation(rotation) { SET_HASH; }
+	PhysicsBox(vec2 dimensions = vec2(1)) :
+		dimensions(dimensions) { SET_HASH; }
+
+	bool Overlaps(vec2 relPos) const
+	{
+		relPos += dimensions * 0.5f;
+		return relPos.x >= 0 && relPos.x <= dimensions.x && relPos.y >= 0 && relPos.y <= dimensions.y;
+	}
 };
 
 NewComponent(InfinitePhysicsWall)

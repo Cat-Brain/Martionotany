@@ -77,4 +77,7 @@
     <Text Include="FramebufferFrag.txt" />
     <Text Include="FramebufferVert.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
 </Project>
