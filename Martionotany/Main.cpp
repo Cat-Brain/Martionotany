@@ -1,5 +1,8 @@
 #include "Systems.h"
 
+#define FOO1(a) cout << a;
+#define FOO2(a, b) cout << a << ", " << b;
+
 int main()
 {
 	cout << "Greetings Universe!\n";
@@ -9,7 +12,7 @@ int main()
         CameraMouse() }));
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
-        Player(ECS::GetEntity(cameraIndex).GetComponent<Position>(), 10, 2, 5)}));
+        Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 10, 2, 5)}));
 
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh),
         Position({3, 0}), Scale(), Rotation(), PhysicsBox(),
@@ -49,6 +52,6 @@ To Do:
     Add text rendering
     Add high res rendering step
     Add UI layer
-    Make resources all be in a folder such that they are easier to manage and organize
+    Make resources all be in a folder such that they are easier to manage and organize <- Ooooh, maybe in the copy file tab in project settings?
     Add basic support for Audio <- CAudio?
 */

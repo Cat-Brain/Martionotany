@@ -4,12 +4,12 @@
 
 #pragma region Early Physics
 
-SYSTEM(UpdateGravity, updateGravity, { CompList({ HASH(PhysicsBody), HASH(Gravity) }) }, Update)
+SYSTEM(UpdateGravity, updateGravity, { CompReq({ HASH(PhysicsBody), HASH(Gravity) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		PhysicsBody& body = *entity[0];
-		Gravity& gravity = *entity[1];
+		PhysicsBody& body = entity[0];
+		Gravity& gravity = entity[1];
 
 		body.vel += deltaTime * defaultGravity * gravity.multiplier * gravity.direction;
 	}
@@ -19,13 +19,13 @@ SYSTEM(UpdateGravity, updateGravity, { CompList({ HASH(PhysicsBody), HASH(Gravit
 
 #pragma region Game Stuff
 
-SYSTEM(UpdateMouse, updateMouse, { CompList({ HASH(Camera), HASH(CameraMouse), HASH(Position) }) }, Update)
+SYSTEM(UpdateMouse, updateMouse, { CompReq({ HASH(Camera), HASH(CameraMouse), HASH(Position) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		Camera& camera = *entity[0];
-		CameraMouse& mouse = *entity[1];
-		Position& position = *entity[2];
+		Camera& camera = entity[0];
+		CameraMouse& mouse = entity[1];
+		Position& position = entity[2];
 
 		mouse.camMousePos = (Input::screenMousePos - vec2(0.5f)) * camera.CamDim();
 		mouse.worldMousePos = mouse.camMousePos + position.pos;
@@ -33,38 +33,38 @@ SYSTEM(UpdateMouse, updateMouse, { CompList({ HASH(Camera), HASH(CameraMouse), H
 	}
 }
 
-SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ {HASH(CameraMouse)},
-	CompList({ HASH(MouseInteractable), HASH(PhysicsCircle), HASH(Position) }) }), Update)
+SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ CompReq({ HASH(CameraMouse) }),
+	CompReq({ HASH(MouseInteractable), HASH(PhysicsCircle), HASH(Position) }) }), Update)
 {
-	for (vector<Component*> mouseEntity : components[0])
+	for (ProcEntity& mouseEntity : components[0])
 	{
-		CameraMouse& mouse = *mouseEntity[0];
-		for (vector<Component*> physicsEntity : components[1])
-			physicsEntity[0]->mouseInteractable.Update(physicsEntity[1]->physicsCircle.Overlaps(
-				mouse.gridMousePos - physicsEntity[2]->position.pos));
+		CameraMouse& mouse = mouseEntity[0];
+		for (ProcEntity& physicsEntity : components[1])
+			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsCircle.Overlaps(
+				mouse.gridMousePos - physicsEntity[2].position.pos));
 	}
 }
 
-SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ {HASH(CameraMouse)},
-	CompList({ HASH(MouseInteractable), HASH(PhysicsBox), HASH(Position), HASH(Rotation)})}), Update)
+SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)}),
+	CompReq({ HASH(MouseInteractable), HASH(PhysicsBox), HASH(Position), HASH(Rotation)})}), Update)
 {
-	for (vector<Component*> mouseEntity : components[0])
+	for (ProcEntity& mouseEntity : components[0])
 	{
-		CameraMouse& mouse = *mouseEntity[0];
-		for (vector<Component*> physicsEntity : components[1])
-			physicsEntity[0]->mouseInteractable.Update(physicsEntity[1]->physicsBox.Overlaps(
-				glm::rotate(mouse.gridMousePos - physicsEntity[2]->position.pos, physicsEntity[3]->rotation.rotation)));
+		CameraMouse& mouse = mouseEntity[0];
+		for (ProcEntity& physicsEntity : components[1])
+			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsBox.Overlaps(
+				glm::rotate(mouse.gridMousePos - physicsEntity[2].position.pos, physicsEntity[3].rotation.rotation)));
 	}
 }
 
 SYSTEM(UpdateInteractableColors, updateInteractableColors,
-	{ CompList({ HASH(InteractableColor), HASH(MouseInteractable), HASH(MeshRenderer) })}, Update)
+	{ CompReq({ HASH(InteractableColor), HASH(MouseInteractable), HASH(MeshRenderer) })}, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		InteractableColor& interactableColor = *entity[0];
-		MouseInteractable& mouseInteractable = *entity[1];
-		MeshRenderer& meshRenderer = *entity[2];
+		InteractableColor& interactableColor = entity[0];
+		MouseInteractable& mouseInteractable = entity[1];
+		MeshRenderer& meshRenderer = entity[2];
 
 		if (mouseInteractable.held)
 			meshRenderer.color = interactableColor.held;
@@ -75,12 +75,12 @@ SYSTEM(UpdateInteractableColors, updateInteractableColors,
 	}
 }
 
-SYSTEM(OnInteractUpdate, onInteractUpdate, { CompList({ HASH(MouseInteractable), HASH(OnInteract) }) }, Update)
+SYSTEM(OnInteractUpdate, onInteractUpdate, { CompReq({ HASH(MouseInteractable), HASH(OnInteract) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		MouseInteractable& mouseInteractable = *entity[0];
-		OnInteract& onInteract = *entity[1];
+		MouseInteractable& mouseInteractable = entity[0];
+		OnInteract& onInteract = entity[1];
 
 		if (mouseInteractable.pressed && (onInteract.condition == ON_PRESS || onInteract.condition == ON_BOTH))
 			onInteract.onInteract.Run();
@@ -90,24 +90,24 @@ SYSTEM(OnInteractUpdate, onInteractUpdate, { CompList({ HASH(MouseInteractable),
 	}
 }
 
-SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompList({ HASH(FollowCursor), HASH(Position) }) }, Update)
+SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompReq({ HASH(FollowCursor), HASH(Position) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		FollowCursor& followCursor = *entity[0];
-		Position& position = *entity[1];
+		FollowCursor& followCursor = entity[0];
+		Position& position = entity[1];
 
 		position.pos = followCursor.mouse.worldMousePos;
 	}
 }
 
-SYSTEM(PlayerMove, playerMove, { CompList({ HASH(PhysicsBody), HASH(Player), HASH(Rotation) })}, Update)
+SYSTEM(PlayerMove, playerMove, { CompReq({ HASH(PhysicsBody), HASH(Player), HASH(Rotation) })}, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		PhysicsBody& physicsBody = *entity[0];
-		Player& player = *entity[1];
-		Rotation& rotation = *entity[2];
+		PhysicsBody& physicsBody = entity[0];
+		Player& player = entity[1];
+		Rotation& rotation = entity[2];
 
 		float inp = 0;
 		if (Input::d.held)
@@ -133,28 +133,28 @@ SYSTEM(PlayerMove, playerMove, { CompList({ HASH(PhysicsBody), HASH(Player), HAS
 
 #pragma region Physics
 
-SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { CompList({HASH(Position), HASH(PhysicsBody)}) }, Update)
+SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { CompReq({HASH(Position), HASH(PhysicsBody)}) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		Position& pos = *entity[0];
-		PhysicsBody& body = *entity[1];
+		Position& pos = entity[0];
+		PhysicsBody& body = entity[1];
 
 		pos.pos += body.vel * deltaTime;
 	}
 }
 
-SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ {HASH(InfinitePhysicsWall)},
-	CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }), Update)
+SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ CompReq({HASH(InfinitePhysicsWall)}),
+	CompReq({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }), Update)
 {
-	for (vector<Component*> wallEntity : components[0])
+	for (ProcEntity& wallEntity : components[0])
 	{
-		InfinitePhysicsWall& wall = *wallEntity[0];
-		for (vector<Component*> circleEntity : components[1])
+		InfinitePhysicsWall& wall = wallEntity[0];
+		for (ProcEntity& circleEntity : components[1])
 		{
-			Position& pos = *circleEntity[0];
-			PhysicsBody& body = *circleEntity[1];
-			PhysicsCircle& circle = *circleEntity[2];
+			Position& pos = circleEntity[0];
+			PhysicsBody& body = circleEntity[1];
+			PhysicsCircle& circle = circleEntity[2];
 
 			float height = glm::dot(wall.normal, pos.pos) - circle.radius;
 			if (height > wall.height)
@@ -166,18 +166,18 @@ SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ {HASH(
 	}
 }
 
-SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(InfinitePhysicsWall)},
-	CompList({HASH(Position), HASH(Rotation), HASH(PhysicsBody), HASH(PhysicsBox)})}), Update)
+SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ CompReq({HASH(InfinitePhysicsWall)}),
+	CompReq({HASH(Position), HASH(Rotation), HASH(PhysicsBody), HASH(PhysicsBox)})}), Update)
 {
-	for (vector<Component*> wallEntity : components[0])
+	for (ProcEntity& wallEntity : components[0])
 	{
-		InfinitePhysicsWall& wall = *wallEntity[0];
-		for (vector<Component*> circleEntity : components[1])
+		InfinitePhysicsWall& wall = wallEntity[0];
+		for (ProcEntity& circleEntity : components[1])
 		{
-			Position& pos = *circleEntity[0];
-			Rotation& rotation = *circleEntity[1];
-			PhysicsBody& body = *circleEntity[2];
-			PhysicsBox& box = *circleEntity[3];
+			Position& pos = circleEntity[0];
+			Rotation& rotation = circleEntity[1];
+			PhysicsBody& body = circleEntity[2];
+			PhysicsBox& box = circleEntity[3];
 
 			vec2 right = vec2(cos(rotation.rotation), sin(rotation.rotation));
 			vec2 up = vec2(-right.y, right.x);
@@ -201,19 +201,19 @@ SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ {HASH(Infi
 	}
 }
 
-SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompList({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }, Update)
+SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompReq({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }, Update)
 {
 	for (int i = 0; i < (int)components[0].size() - 1; i++)
 		for (int j = i + 1; j < (int)components[0].size(); j++)
 		{
-			Position& posA = *components[0][i][0];
-			Position& posB = *components[0][j][0];
+			Position& posA = components[0][i][0];
+			Position& posB = components[0][j][0];
 
-			PhysicsBody& bodyA = *components[0][i][1];
-			PhysicsBody& bodyB = *components[0][j][1];
+			PhysicsBody& bodyA = components[0][i][1];
+			PhysicsBody& bodyB = components[0][j][1];
 
-			PhysicsCircle& circleA = *components[0][i][2];
-			PhysicsCircle& circleB = *components[0][j][2];
+			PhysicsCircle& circleA = components[0][i][2];
+			PhysicsCircle& circleB = components[0][j][2];
 			
 			float desiredDistance = circleA.radius + circleB.radius;
 			if (posA.pos != posB.pos && glm::distance2(posA.pos, posB.pos) < desiredDistance * desiredDistance)
@@ -234,18 +234,18 @@ SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompList({HASH(Position),
 
 #pragma region Rendering
 
-SYSTEM(PlayerCameraUpdate, playerCameraUpdate, { CompList({ HASH(Position), HASH(Player) }) }, Update)
+SYSTEM(PlayerCameraUpdate, playerCameraUpdate, { CompReq({ HASH(Position), HASH(Player) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
-		entity[1]->player.camera.pos = entity[0]->position.pos;
+	for (ProcEntity& entity : components[0])
+		entity[1].player.camera.pos = entity[0].position.pos;
 }
 
-SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompList({ HASH(Position), HASH(Camera) }) }, Update)
+SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompReq({ HASH(Position), HASH(Camera) }) }, Update)
 {
-	for (vector<Component*> entity : components[0])
+	for (ProcEntity& entity : components[0])
 	{
-		Position& pos = *entity[0];
-		Camera& camera = *entity[1];
+		Position& pos = entity[0];
+		Camera& camera = entity[1];
 		vec2 stretch = camera.framebuffer->FindStretch();
 		// Find the typical matrix for rendering:
 		camera.matrix = glm::identity<mat4>();
@@ -263,23 +263,23 @@ SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompList({ HASH(Position), HASH
 	}
 }
 
-SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ {HASH(Camera)},
-	CompList({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)})}), Update)
+SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
+	CompReq({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)})}), Update)
 {
-	for (vector<Component*> cameraEntity : components[0])
+	for (ProcEntity& cameraEntity : components[0])
 	{
-		Camera& camera = *cameraEntity[0];
+		Camera& camera = cameraEntity[0];
 		glUseProgram(camera.shader.program);
 		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camera.matrix));
 
-		for (vector<Component*> meshEntity : components[1])
+		for (ProcEntity& meshEntity : components[1])
 		{
-			MeshRenderer& meshRenderer = *meshEntity[0];
+			MeshRenderer& meshRenderer = meshEntity[0];
 			if ((camera.renderMask & static_cast<byte>(meshRenderer.renderLayer)) == 0)
 				continue;
-			Position& pos = *meshEntity[1];
-			Scale& scale = *meshEntity[2];
-			Rotation& rotation = *meshEntity[3];
+			Position& pos = meshEntity[1];
+			Scale& scale = meshEntity[2];
+			Rotation& rotation = meshEntity[3];
 			
 			mat3 transform = glm::identity<mat3>();
 			transform = glm::translate(transform, pos.pos);
@@ -315,27 +315,27 @@ SYSTEM(RenderToScreen, renderToScreen, { }, Update)
 
 constexpr vec4 debugColor = vec4(0, 1, 0, 0.3f);
 
-SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ {HASH(Camera)},
-	CompList({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)}) }), Update)
+SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
+	CompReq({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)}) }), Update)
 {
 	if (!inDebug)
 		return;
 
 	glEnable(GL_BLEND);
-	for (vector<Component*> cameraEntity : components[0])
+	for (ProcEntity& cameraEntity : components[0])
 	{
-		Camera& camera = *cameraEntity[0];
+		Camera& camera = cameraEntity[0];
 		glUseProgram(camera.shader.program);
 		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camera.debugMatrix));
 
-		for (vector<Component*> meshEntity : components[1])
+		for (ProcEntity& meshEntity : components[1])
 		{
-			MeshRenderer& meshRenderer = *meshEntity[0];
+			MeshRenderer& meshRenderer = meshEntity[0];
 			if ((camera.renderMask & static_cast<byte>(meshRenderer.renderLayer)) == 0)
 				continue;
-			Position& pos = *meshEntity[1];
-			Scale& scale = *meshEntity[2];
-			Rotation& rotation = *meshEntity[3];
+			Position& pos = meshEntity[1];
+			Scale& scale = meshEntity[2];
+			Rotation& rotation = meshEntity[3];
 
 			mat3 transform = glm::identity<mat3>();
 			transform = glm::translate(transform, pos.pos);

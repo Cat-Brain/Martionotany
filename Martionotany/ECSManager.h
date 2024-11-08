@@ -29,6 +29,11 @@ union Component
 	TYPE(InteractableColor, interactableColor);
 	TYPE(OnInteract, onInteract);
 	TYPE(Player, player);
+
+	constexpr Component& operator=(const Component& component)
+	{
+		return *this = component;
+	}
 };
 
 class Entity
@@ -41,13 +46,29 @@ public:
 	Entity(vector<Component> components, bool firstFrame = true) :
 		firstFrame(firstFrame), components(components), systems{} { }
 
-	bool HasComponents(vector<CHash>& requirements)
+	bool HasRequirements(CompReq& requirements)
 	{
-		for (CHash requirement : requirements)
+		for (CHash antiTag : requirements.antiTags)
+			for (Component& component : components)
+				if (component.base.hash_code == antiTag)
+					return false;
+		for (CHash requirement : requirements.requirements)
 		{
 			bool invalid = true;
 			for (Component& component : components)
 				if (component.base.hash_code == requirement)
+				{
+					invalid = false;
+					break;
+				}
+			if (invalid)
+				return false;
+		}
+		for (CHash tag : requirements.tags)
+		{
+			bool invalid = true;
+			for (Component& component : components)
+				if (component.base.hash_code == tag)
 				{
 					invalid = false;
 					break;
@@ -66,12 +87,6 @@ public:
 		assert(false);
 		return components[0];
 	}
-
-	template <typename T>
-	T& GetComponent()
-	{
-		return (T&)GetComponent(HASH(T));
-	}
 };
 
 namespace ECS
@@ -84,14 +99,16 @@ namespace ECS
 		entities.push_back(entity);
 		for (System* system : System::systems)
 			for (int i = 0; i < system->requirements.size(); i++)
-				if (entity.HasComponents(system->requirements[i]))
+				if (entity.HasRequirements(system->requirements[i]))
 				{
-					// Add entity to system:
 					uint index = static_cast<uint>(system->entities[i].size());
-					system->entities[i].push_back({ entityId, static_cast<uint>(entity.systems.size()), vector<ushort>(system->requirements[i].size())});
-					for (int j = 0; j < system->requirements[i].size(); j++)
+					// Add entity to system:
+					system->entities[i].push_back({ entityId, static_cast<uint>(entity.systems.size()),
+						vector<ushort>(system->requirements[i].requirements.size())});
+
+					for (int j = 0; j < system->requirements[i].requirements.size(); j++)
 						for (uint k = 0; k < entity.components.size(); k++)
-							if (entity.components[k].base.hash_code == system->requirements[i][j])
+							if (entity.components[k].base.hash_code == system->requirements[i].requirements[j])
 							{
 								get<2>(system->entities[i][index])[j] = k;
 								break;
@@ -154,6 +171,9 @@ namespace ECS
 		for (GenericSystem* func : GenericSystem::updates)
 			if (func->callRelativity == After)
 				func->fun();
+		// ADD PROPER DESTRUCTION OF ENTITIES HERE:
+		//for (Entity& entity : entities)
+		//	if (entity.)
 	}
 
 	void Close()
@@ -171,17 +191,23 @@ namespace ECS
 
 void System::Run()
 {
-	vector<vector<vector<Component*>>> inputs = vector<vector<vector<Component*>>>(requirements.size());
+	if (!enabled) return;
+	ForcedRun();
+}
+
+void System::ForcedRun()
+{
+	vector<vector<ProcEntity>> inputs = vector<vector<ProcEntity>>(requirements.size());
 	for (int i = 0; i < requirements.size(); i++)
 	{
-		inputs[i] = vector<vector<Component*>>(entities[i].size());
+		inputs[i] = vector<ProcEntity>(entities[i].size());
 
 		for (int j = 0; j < entities[i].size(); j++)
 		{
 			Entity& entity = ECS::GetEntity(get<0>(entities[i][j]));
-			inputs[i][j] = vector<Component*>(requirements[i].size());
-			for (int k = 0; k < requirements[i].size(); k++)
-				inputs[i][j][k] = &entity.components[get<2>(entities[i][j])[k]];
+			inputs[i][j] = ProcEntity(requirements[i].requirements.size(), entity);
+			for (int k = 0; k < requirements[i].requirements.size(); k++)
+				inputs[i][j].components[k] = &entity.components[get<2>(entities[i][j])[k]];
 		}
 	}
 	fun(inputs);

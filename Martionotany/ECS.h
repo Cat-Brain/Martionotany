@@ -7,6 +7,7 @@ class BaseComponent
 {
 public:
 	CHash hash_code = HASH(0);
+	bool toBeDestroy = false;
 
 	bool Cmp(const BaseComponent& other) const
 	{
@@ -29,8 +30,49 @@ enum CallRelativity
 	Before, After
 };
 
-typedef vector<CHash> CompList;
-typedef vector<CompList> SysReq;
+struct CompReq
+{
+	vector<CHash> requirements, tags, antiTags;
+
+	CompReq(vector<CHash> requirements, vector<CHash> tags = {}, vector<CHash> = {}) :
+		requirements(requirements), tags(tags), antiTags(antiTags) { }
+};
+
+struct CompWrapper
+{
+	Component& component;
+	
+	operator Component&()
+	{
+		return component;
+	}
+};
+
+struct ProcEntity
+{
+	vector<Component*> components;
+	Entity& entity;
+
+	ProcEntity(vector<Component*> components, Entity& entity) :
+		components(components), entity(entity) { }
+
+	ProcEntity(int index, Entity& entity) :
+		components(index), entity(entity) { }
+
+	Component& operator[](int index)
+	{
+		return *components[index];
+	}
+
+	constexpr ProcEntity& operator=(const ProcEntity& pEntity)
+	{
+		components = std::move(pEntity.components);
+		entity = pEntity.entity;
+		return *this;
+	}
+};
+
+typedef vector<CompReq> SysReq;
 
 class GenericSystem
 {
@@ -76,15 +118,13 @@ public:
 	static vector<System*> startups, updates, closes, systems;
 
 	SysReq requirements; // <- Values are the hash_codes of components
-	SysReq tags, antiTags; // Tags are requirements that don't need to be passed, antitags are requirements of something that mustn't be there
-	function<void(vector<vector<vector<Component*>>>)> fun;
+	function<void(vector<vector<ProcEntity>>)> fun;
 	vector<vector<tuple<uint, uint, vector<ushort>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
 	bool enabled;
 
-	System(SysReq requirements, function<void(vector<vector<vector<Component*>>>)> fun, SystemCall call,
-		SysReq tags = { {} }, SysReq antiTags = { {} }, bool enabled = true) :
-		requirements(requirements), fun(fun),
-		tags(tags), antiTags(antiTags), enabled(enabled), entities(requirements.size())
+	System(SysReq requirements, function<void(vector<vector<ProcEntity>>)> fun, SystemCall call,
+		bool enabled = true) :
+		requirements(requirements), fun(fun), enabled(enabled), entities(requirements.size())
 	{
 		systems.push_back(this);
 		switch (call)
@@ -108,19 +148,15 @@ public:
 	}
 
 	void Run();
+	void ForcedRun();
 };
 vector<System*> System::startups{}, System::updates{}, System::closes{}, System::systems{};
 
-#define SYSTEM_1(name1, name2, requirements, call)								System name2(requirements, name1, call);
-#define SYSTEM_2(name1, name2, requirements, call, tags)						System name2(requirements, name1, call, tags);
-#define SYSTEM_3(name1, name2, requirements, call, tags, antiTags)				System name2(requirements, name1, call, tags, antiTags);
-#define SYSTEM_4(name1, name2, requirements, call, tags, antiTags, enabled)		System name2(requirements, name1, call, tags, antiTags, enabled);
+#define SYSTEM_1(name1, name2, requirements, call)			System name2(requirements, name1, call);
+#define SYSTEM_2(name1, name2, requirements, call, enabled)	System name2(requirements, name1, call, enabled);
 
-#define GET_5TH_ARG(arg1, arg2, arg3, arg4, arg5, ...) arg5
-#define SYSTEM_MACRO_CHOOSER(...) \
-    GET_5TH_ARG(__VA_ARGS__, SYSTEM_4, SYSTEM_3, \
-                SYSTEM_2, SYSTEM_1)
+#define SYSTEM_X(ignored, _1, fun, ...) fun
 
-#define SYSTEM(name1, name2, requirements, call, ...) void name1(vector<vector<vector<Component*>>> components); \
-SYSTEM_MACRO_CHOOSER(__VA_ARGS__)(name1, name2, requirements, call, __VA_ARGS__) \
-void name1(vector<vector<vector<Component*>>> components)
+#define SYSTEM(name1, name2, requirements, call, ...) void name1(vector<vector<ProcEntity>> components); \
+SYSTEM_X(, ##__VA_ARGS__, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
+void name1(vector<vector<ProcEntity>> components)
