@@ -205,7 +205,7 @@ void System::ForcedRun()
 		for (int j = 0; j < entities[i].size(); j++)
 		{
 			Entity& entity = ECS::GetEntity(get<0>(entities[i][j]));
-			inputs[i][j] = ProcEntity(requirements[i].requirements.size(), entity);
+			inputs[i][j] = ProcEntity(vector<Component*>(requirements[i].requirements.size()), &entity);
 			for (int k = 0; k < requirements[i].requirements.size(); k++)
 				inputs[i][j].components[k] = &entity.components[get<2>(entities[i][j])[k]];
 		}

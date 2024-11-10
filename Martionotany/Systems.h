@@ -41,7 +41,7 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ CompReq({ HASH(CameraM
 		CameraMouse& mouse = mouseEntity[0];
 		for (ProcEntity& physicsEntity : components[1])
 			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsCircle.Overlaps(
-				mouse.gridMousePos - physicsEntity[2].position.pos));
+				mouse.worldMousePos - physicsEntity[2].position.pos));
 	}
 }
 
@@ -53,7 +53,7 @@ SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)})
 		CameraMouse& mouse = mouseEntity[0];
 		for (ProcEntity& physicsEntity : components[1])
 			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsBox.Overlaps(
-				glm::rotate(mouse.gridMousePos - physicsEntity[2].position.pos, physicsEntity[3].rotation.rotation)));
+				glm::rotate(mouse.worldMousePos - physicsEntity[2].position.pos, physicsEntity[3].rotation.rotation)));
 	}
 }
 

@@ -56,9 +56,9 @@ typedef type_index CHash; // Component hash
 ivec2 screenDim = ivec2(800, 600);
 float currentTime = 0, deltaTime = 0;
 GLFWwindow* window;
-constexpr int pixelsPerUnit = 8;
+constexpr int pixelsPerUnit = 16;
 bool inDebug = false;
-bool windowDecorated = false, windowFloating = true;
+bool windowDecorated = true, windowFloating = false;
 
 namespace Vec
 {

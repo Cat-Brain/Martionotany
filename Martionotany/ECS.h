@@ -51,24 +51,17 @@ struct CompWrapper
 struct ProcEntity
 {
 	vector<Component*> components;
-	Entity& entity;
+	Entity* entity;
 
-	ProcEntity(vector<Component*> components, Entity& entity) :
+	ProcEntity() :
+		components(0), entity(nullptr) { }
+
+	ProcEntity(vector<Component*> components, Entity* entity) :
 		components(components), entity(entity) { }
-
-	ProcEntity(int index, Entity& entity) :
-		components(index), entity(entity) { }
 
 	Component& operator[](int index)
 	{
 		return *components[index];
-	}
-
-	constexpr ProcEntity& operator=(const ProcEntity& pEntity)
-	{
-		components = std::move(pEntity.components);
-		entity = pEntity.entity;
-		return *this;
 	}
 };
 

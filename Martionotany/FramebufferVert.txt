@@ -10,5 +10,4 @@ void main()
 {
     gl_Position = vec4(aPos, 0.5, 1.0);
     uv = aUV * stretch;
-    //uv = gl_Position.xy * 0.5 + vec2(0.5);
 }

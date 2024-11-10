@@ -21,8 +21,8 @@ GENERIC_SYSTEM(WindowInit, windowInit, Before, Start)
     glfwWindowHint(GLFW_DECORATED, windowDecorated);
     glfwWindowHint(GLFW_FLOATING, windowFloating);
 
-    screenDim.x = mainMonitor.workScale.x;
-    screenDim.y = mainMonitor.workScale.y / 5;
+    //screenDim.x = mainMonitor.workScale.x;
+    //screenDim.y = mainMonitor.workScale.y / 5;
     window = glfwCreateWindow(screenDim.x, screenDim.y, "Martionotany", NULL, NULL);
     if (window == NULL)
     {
