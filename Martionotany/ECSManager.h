@@ -27,7 +27,6 @@ union Component
 	TYPE(Gravity, gravity);
 	TYPE(MouseInteractable, mouseInteractable);
 	TYPE(InteractableColor, interactableColor);
-	TYPE(OnInteract, onInteract);
 	TYPE(Player, player);
 
 	constexpr Component& operator=(const Component& component)
@@ -39,12 +38,13 @@ union Component
 class Entity
 {
 public:
-	bool firstFrame;
+	bool enabled, firstFrame, toDestroy;
 	vector<Component> components;
 	vector<tuple<System*, uint, uint>> systems; // [System, Outer Index (Which entity parameter this meets), Inner Index (Which entity is this)
+	int index = 0;
 
-	Entity(vector<Component> components, bool firstFrame = true) :
-		firstFrame(firstFrame), components(components), systems{} { }
+	Entity(vector<Component> components, bool enabled = true, bool firstFrame = true, bool toDestroy = false) :
+		components(components), enabled(enabled), firstFrame(firstFrame), toDestroy(toDestroy), systems{} { }
 
 	bool HasRequirements(CompReq& requirements)
 	{
@@ -79,6 +79,7 @@ public:
 		return true;
 	}
 
+	// Bugs out whenever component not found and returns an error
 	Component& GetComponent(CHash desired)
 	{
 		for (Component& component : components)
@@ -86,6 +87,29 @@ public:
 				return component;
 		assert(false);
 		return components[0];
+	}
+
+	// Return nullptr when not found
+	Component* TryGetComponent(CHash desired)
+	{
+		for (Component& component : components)
+			if (component.base.hash_code == desired)
+				return &component;
+		return nullptr;
+	}
+	// Return nullptr when not found
+	template <class T>
+	T* TryGetComponent()
+	{
+		// Maybe put the correct cast type here someday lol
+		return (T*)TryGetComponent(HASH(T));
+	}
+
+	void SetIndex(int index)
+	{
+		this->index = index;
+		for (auto& [system, outerIndex, innerIndex] : systems)
+			get<0>(system->entities[outerIndex][innerIndex]) = index;
 	}
 };
 
@@ -97,6 +121,8 @@ namespace ECS
 	{
 		uint entityId = static_cast<uint>(entities.size());
 		entities.push_back(entity);
+		entities[entityId].index = entityId;
+
 		for (System* system : System::systems)
 			for (int i = 0; i < system->requirements.size(); i++)
 				if (entity.HasRequirements(system->requirements[i]))
@@ -115,7 +141,7 @@ namespace ECS
 							}
 
 					// Save system and index in entity:
-					entity.systems.push_back({ system, i, index });
+					entities[entityId].systems.push_back({system, i, index});
 				}
 		return static_cast<int>(entities.size() - 1);
 	}
@@ -126,10 +152,18 @@ namespace ECS
 
 		for (auto& [system, outerIndex, innerIndex] : entity.systems)
 		{
-			system->entities.erase(system->entities.begin() + innerIndex);
-			for (int i = innerIndex; i < system->entities.size(); i++)
-				get<2>(entities[get<0>(system->entities[outerIndex][i])].systems[get<1>(system->entities[outerIndex][i])])--;
+			system->entities[outerIndex].erase(system->entities[outerIndex].begin() + innerIndex);
+			for (int i = innerIndex; i < system->entities[outerIndex].size(); i++)
+			{
+				get<2>(entities[get<0>(system->entities[outerIndex][i])].systems[get<1>(system->entities[outerIndex][i])]) = i;
+				//get<0>(system->entities[outerIndex][i])--;
+			}
 		}
+
+		entities.erase(entities.begin() + index);
+
+		for (int i = index; i < entities.size(); i++)
+			entities[i].SetIndex(i);
 	}
 
 	Entity& GetEntity(int index)
@@ -151,43 +185,52 @@ namespace ECS
 
 	void Start()
 	{
-		for (GenericSystem* func : GenericSystem::startups)
-			if (func->callRelativity == Before)
-				func->fun();
-		for (System* system : System::startups)
-			system->Run();
-		for (GenericSystem* func : GenericSystem::startups)
-			if (func->callRelativity == After)
-				func->fun();
+		CallSystems(SystemCall::Start);
 	}
 
 	void Update()
 	{
-		for (GenericSystem* func : GenericSystem::updates)
-			if (func->callRelativity == Before)
-				func->fun();
-		for (System* system : System::updates)
-			system->Run();
-		for (GenericSystem* func : GenericSystem::updates)
-			if (func->callRelativity == After)
-				func->fun();
-		// ADD PROPER DESTRUCTION OF ENTITIES HERE:
-		//for (Entity& entity : entities)
-		//	if (entity.)
+		CallSystems(SystemCall::Update);
 	}
 
 	void Close()
 	{
-		for (GenericSystem* func : GenericSystem::closes)
-			if (func->callRelativity == Before)
-				func->fun();
-		for (System* system : System::closes)
-			system->Run();
-		for (GenericSystem* func : GenericSystem::closes)
-			if (func->callRelativity == After)
-				func->fun();
+		CallSystems(SystemCall::Close);
 	}
 };
+
+
+#pragma region System Call Evals
+// System call evals can go here, they must be after entity:
+bool DefaultEntityEval(Entity& entity)
+{
+	return entity.enabled;
+}
+
+bool AwakeEntityEval(Entity& entity)
+{
+	return entity.firstFrame;
+}
+bool DestroyEntityEval(Entity& entity)
+{
+	return entity.toDestroy;
+}
+
+bool OnClickEntityEval(Entity& entity)
+{
+	MouseInteractable* interactable = entity.TryGetComponent<MouseInteractable>();
+	if (interactable == nullptr)
+		return false;
+	return interactable->pressed;
+}
+bool OnReleaseEntityEval(Entity& entity)
+{
+	MouseInteractable* interactable = entity.TryGetComponent<MouseInteractable>();
+	if (interactable == nullptr)
+		return false;
+	return interactable->released;
+}
+#pragma endregion
 
 void System::Run()
 {
@@ -199,16 +242,21 @@ void System::ForcedRun()
 {
 	vector<vector<ProcEntity>> inputs = vector<vector<ProcEntity>>(requirements.size());
 	for (int i = 0; i < requirements.size(); i++)
-	{
-		inputs[i] = vector<ProcEntity>(entities[i].size());
-
 		for (int j = 0; j < entities[i].size(); j++)
 		{
+			// Gets reference to entity to avoid putting this horrible piece of code everywhere
 			Entity& entity = ECS::GetEntity(get<0>(entities[i][j]));
-			inputs[i][j] = ProcEntity(vector<Component*>(requirements[i].requirements.size()), &entity);
+
+			// Skip if entity does not meet eval requirements
+			if (!eval(entity))
+				continue;
+
+			// Add new ProcEntity with for the entity and set up its components vector
+			inputs[i].push_back(ProcEntity(vector<Component*>(requirements[i].requirements.size()), &entity));
+
+			// Add all the components in
 			for (int k = 0; k < requirements[i].requirements.size(); k++)
-				inputs[i][j].components[k] = &entity.components[get<2>(entities[i][j])[k]];
+				inputs[i][inputs[i].size() - 1].components[k] = &entity.components[get<2>(entities[i][j])[k]];
 		}
-	}
 	fun(inputs);
 }

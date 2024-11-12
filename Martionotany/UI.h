@@ -29,10 +29,6 @@ public:
 	}
 };
 
-NewComponent(HoverIn)
-{
-};
-
 NewComponent(InteractableColor)
 {
 public:
@@ -41,23 +37,3 @@ public:
 	InteractableColor(vec4 normal, vec4 hovered, vec4 held):
 		normal(normal), hovered(hovered), held(held) { SET_HASH; }
 };
-
-enum OnInteractConditional
-{
-	ON_PRESS, ON_RELEASE, ON_BOTH
-};
-// IMPROVE THIS TO WORK WITH LISTS!!!
-NewComponent(OnInteract)
-{
-public:
-	System& onInteract;
-	OnInteractConditional condition;
-
-	OnInteract(System& onInteract, OnInteractConditional condition) :
-		onInteract(onInteract), condition(condition) { SET_HASH; }
-};
-
-SYSTEM(TestPrint, testPrint, { {} }, None)
-{
-	cout << "=]\n";
-}

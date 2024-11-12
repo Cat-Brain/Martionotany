@@ -2,6 +2,18 @@
 #include "Window.h"
 #include "Input.h"
 
+#pragma region Awake
+
+SYSTEM(SilenceAwakens, silenceAwakens, { CompReq() }, Update, AwakeEntityEval)
+{
+	for (ProcEntity& entity : components[0])
+	{
+		entity.entity->firstFrame = false;
+	}
+}
+
+#pragma endregion
+
 #pragma region Early Physics
 
 SYSTEM(UpdateGravity, updateGravity, { CompReq({ HASH(PhysicsBody), HASH(Gravity) }) }, Update)
@@ -20,16 +32,17 @@ SYSTEM(UpdateGravity, updateGravity, { CompReq({ HASH(PhysicsBody), HASH(Gravity
 #pragma region Game Stuff
 
 SYSTEM(UpdateMouse, updateMouse, { CompReq({ HASH(Camera), HASH(CameraMouse), HASH(Position) }) }, Update)
-{
+{ // FIX THIS SYSTEM!!!
 	for (ProcEntity& entity : components[0])
 	{
 		Camera& camera = entity[0];
 		CameraMouse& mouse = entity[1];
 		Position& position = entity[2];
 
-		mouse.camMousePos = (Input::screenMousePos - vec2(0.5f)) * camera.CamDim();
+		mouse.camMousePos = camera.ScreenToCameraSpace(Input::screenMousePos);
 		mouse.worldMousePos = mouse.camMousePos + position.pos;
-		mouse.gridMousePos = ToGrid(mouse.worldMousePos) - vec2(0.5f / pixelsPerUnit);
+		mouse.gridMousePos = ToGrid(mouse.camMousePos + ToGridCentered(position.pos));
+		//cout << mouse.gridMousePos << ", " << ToGridCentered(mouse.worldMousePos) << ", " << ToGrid(mouse.worldMousePos) << ", " << mouse.worldMousePos << '\n';
 	}
 }
 
@@ -41,7 +54,7 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ CompReq({ HASH(CameraM
 		CameraMouse& mouse = mouseEntity[0];
 		for (ProcEntity& physicsEntity : components[1])
 			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsCircle.Overlaps(
-				mouse.worldMousePos - physicsEntity[2].position.pos));
+				mouse.gridMousePos - physicsEntity[2].position.pos));
 	}
 }
 
@@ -53,7 +66,7 @@ SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)})
 		CameraMouse& mouse = mouseEntity[0];
 		for (ProcEntity& physicsEntity : components[1])
 			physicsEntity[0].mouseInteractable.Update(physicsEntity[1].physicsBox.Overlaps(
-				glm::rotate(mouse.worldMousePos - physicsEntity[2].position.pos, physicsEntity[3].rotation.rotation)));
+				glm::rotate(mouse.gridMousePos - physicsEntity[2].position.pos, physicsEntity[3].rotation.rotation)));
 	}
 }
 
@@ -75,18 +88,11 @@ SYSTEM(UpdateInteractableColors, updateInteractableColors,
 	}
 }
 
-SYSTEM(OnInteractUpdate, onInteractUpdate, { CompReq({ HASH(MouseInteractable), HASH(OnInteract) }) }, Update)
+SYSTEM(TestPrint, testPrint, { CompReq({ HASH(MouseInteractable)}) }, Update, OnReleaseEntityEval)
 {
 	for (ProcEntity& entity : components[0])
 	{
-		MouseInteractable& mouseInteractable = entity[0];
-		OnInteract& onInteract = entity[1];
-
-		if (mouseInteractable.pressed && (onInteract.condition == ON_PRESS || onInteract.condition == ON_BOTH))
-			onInteract.onInteract.Run();
-
-		if (mouseInteractable.released && (onInteract.condition == ON_RELEASE || onInteract.condition == ON_BOTH))
-			onInteract.onInteract.Run();
+		entity.entity->toDestroy = true;
 	}
 }
 
@@ -115,7 +121,7 @@ SYSTEM(PlayerMove, playerMove, { CompReq({ HASH(PhysicsBody), HASH(Player), HASH
 		if (Input::a.held)
 			inp--;
 
-		float mult = (Input::sprint.held ? 2 : 1) * (Input::walk.held ? 0.5f : 1);
+		float mult = (Input::sprint.held ? 2 : 1) * (Input::walk.held ? 0.5f : 1) * (Input::halt.held ? 0 : 1);
 
 		if (inp == 0)
 			physicsBody.vel.x = TrySubF(physicsBody.vel.x, deltaTime * player.accel);
@@ -351,6 +357,16 @@ SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
 		}
 	}
 	glDisable(GL_BLEND);
+}
+
+#pragma endregion
+
+#pragma region Destroy
+
+SYSTEM(ExecuteDestruction, executeDestruction, { CompReq() }, Update, DestroyEntityEval)
+{
+	for (int i = components[0].size() - 1; i >= 0; i--)
+		ECS::RemoveEntity(components[0][i].entity->index);
 }
 
 #pragma endregion

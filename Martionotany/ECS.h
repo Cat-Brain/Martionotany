@@ -22,7 +22,11 @@ class Entity;
 
 enum SystemCall
 {
-	None, Start, Update, Close
+	Start, // First frame window is open
+	Update, // Every frame
+	Close, // Last frame window is open
+	SystemCallCount, // How many system call types there is. An invalid system call itself
+	None // Never called by generic system calling methods, only by specifics
 };
 
 enum CallRelativity
@@ -34,7 +38,7 @@ struct CompReq
 {
 	vector<CHash> requirements, tags, antiTags;
 
-	CompReq(vector<CHash> requirements, vector<CHash> tags = {}, vector<CHash> = {}) :
+	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> = {}) :
 		requirements(requirements), tags(tags), antiTags(antiTags) { }
 };
 
@@ -72,84 +76,102 @@ class GenericSystem
 public:
 	function<void()> fun;
 	CallRelativity callRelativity;
-	static vector<GenericSystem*> startups, updates, closes, systems;
+	SystemCall call;
 
-	GenericSystem(function<void()> fun, CallRelativity callRelativity, SystemCall systemCall) :
-		fun(fun), callRelativity(callRelativity)
+	static vector<GenericSystem*> systems;
+	static vector<vector<GenericSystem*>> sortedSystems;
+
+	GenericSystem(function<void()> fun, CallRelativity callRelativity, SystemCall call) :
+		fun(fun), callRelativity(callRelativity), call(call)
 	{
 		systems.push_back(this);
-		switch (systemCall)
+		if (call == None)
+			return;
+		if (call < 0 || call == SystemCallCount || call > None)
 		{
-		case None:
-			break;
-		case Start:
-			startups.push_back(this);
-			break;
-		case Update:
-			updates.push_back(this);
-			break;
-		case Close:
-			closes.push_back(this);
-			break;
-		default:
 			cout << "WARNING: Generic System Call Invalid!!!\n";
 			assert(false);
-			break;
+			return;
 		}
+		sortedSystems[call].push_back(this);
 	}
 };
-vector<GenericSystem*> GenericSystem::startups{}, GenericSystem::updates{}, GenericSystem::closes{}, GenericSystem::systems{};
+vector<GenericSystem*> GenericSystem::systems{};
+vector<vector<GenericSystem*>> GenericSystem::sortedSystems(SystemCallCount);
 
 #define GENERIC_SYSTEM(name1, name2, callRelativity, systemCall) void name1(); \
 GenericSystem name2(name1, callRelativity, systemCall); \
 void name1()
 
 
+typedef function<bool(Entity&)> EntityEval;
+bool DefaultEntityEval(Entity& entity);
+
 class System
 {
 public:
-	static vector<System*> startups, updates, closes, systems;
+	static vector<System*> systems;
+	static vector<vector<System*>> sortedSystems;
 
 	SysReq requirements; // <- Values are the hash_codes of components
 	function<void(vector<vector<ProcEntity>>)> fun;
 	vector<vector<tuple<uint, uint, vector<ushort>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
 	bool enabled;
+	SystemCall call;
+	EntityEval eval;
 
-	System(SysReq requirements, function<void(vector<vector<ProcEntity>>)> fun, SystemCall call,
-		bool enabled = true) :
-		requirements(requirements), fun(fun), enabled(enabled), entities(requirements.size())
+		System(SysReq requirements, function<void(vector<vector<ProcEntity>>)> fun, SystemCall call,
+		EntityEval eval = DefaultEntityEval, bool enabled = true) :
+		requirements(requirements), fun(fun), call(call), enabled(enabled), eval(eval),
+			entities(requirements.size())
 	{
 		systems.push_back(this);
-		switch (call)
+		if (call == None)
+			return;
+		if (call < 0 || call == SystemCallCount || call > None)
 		{
-		case None:
-			break;
-		case Start:
-			startups.push_back(this);
-			break;
-		case Update:
-			updates.push_back(this);
-			break;
-		case Close:
-			closes.push_back(this);
-			break;
-		default:
 			cout << "WARNING: System Call Invalid!!!\n";
 			assert(false);
-			break;
+			return;
 		}
+		sortedSystems[call].push_back(this);
 	}
 
 	void Run();
 	void ForcedRun();
 };
-vector<System*> System::startups{}, System::updates{}, System::closes{}, System::systems{};
+vector<System*> System::systems{};
+vector<vector<System*>> System::sortedSystems(SystemCallCount);
 
-#define SYSTEM_1(name1, name2, requirements, call)			System name2(requirements, name1, call);
-#define SYSTEM_2(name1, name2, requirements, call, enabled)	System name2(requirements, name1, call, enabled);
+#define SYSTEM_1(name1, name2, requirements, call)					System name2(requirements, name1, call);
+#define SYSTEM_2(name1, name2, requirements, call, eval)			System name2(requirements, name1, call, eval);
+#define SYSTEM_3(name1, name2, requirements, call, eval, enabled)	System name2(requirements, name1, call, eval, enabled);
 
-#define SYSTEM_X(ignored, _1, fun, ...) fun
+#define SYSTEM_X(ignored, _1, _2, fun, ...) fun
 
 #define SYSTEM(name1, name2, requirements, call, ...) void name1(vector<vector<ProcEntity>> components); \
-SYSTEM_X(, ##__VA_ARGS__, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
+SYSTEM_X(, ##__VA_ARGS__, SYSTEM_3, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
 void name1(vector<vector<ProcEntity>> components)
+
+
+void CallSystems(SystemCall call)
+{
+	if (call == None)
+		return;
+	if (call < 0 || call == SystemCallCount || call > None)
+	{
+		cout << "WARNING: System Call Invalid!!!\n";
+		assert(false);
+		return;
+	}
+
+
+	for (GenericSystem* func : GenericSystem::sortedSystems[call])
+		if (func->callRelativity == Before)
+			func->fun();
+	for (System* system : System::sortedSystems[call])
+		system->Run();
+	for (GenericSystem* func : GenericSystem::sortedSystems[call])
+		if (func->callRelativity == After)
+			func->fun();
+}

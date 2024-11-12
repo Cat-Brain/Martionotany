@@ -25,6 +25,8 @@ public:
 		renderMask(renderMask) { SET_HASH; }
 
 	vec2 CamDim() const; // Defined after Framebuffer
+
+	vec2 ScreenToCameraSpace(vec2 original);
 };
 
 NewComponent(CameraMouse)

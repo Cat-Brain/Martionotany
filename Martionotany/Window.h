@@ -32,7 +32,7 @@ GENERIC_SYSTEM(WindowInit, windowInit, Before, Start)
     }
     glfwMakeContextCurrent(window);
 
-    glfwSetWindowPos(window, 0, mainMonitor.workScale.y - screenDim.y);
+    //glfwSetWindowPos(window, 0, mainMonitor.workScale.y - screenDim.y);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

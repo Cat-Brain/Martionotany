@@ -83,6 +83,7 @@ public:
 		desiredHeight = ppu * zoom * 2;
 	}
 
+	// How many desiredHeights would it take to vertically match screenDim.
 	int ScaleFactor() const
 	{
 		return static_cast<int>(ceil(screenDim.y / desiredHeight));
@@ -145,5 +146,12 @@ GENERIC_SYSTEM(FramebufferTerminate, framebufferTerminate, After, Close)
 
 vec2 Camera::CamDim() const
 {
-	return vec2(screenDim) / static_cast<float>(framebuffer->ScaleFactor() * pixelsPerUnit);
+	return static_cast<vec2>(screenDim) / static_cast<float>(framebuffer->ScaleFactor() * pixelsPerUnit);
+}
+
+vec2 Camera::ScreenToCameraSpace(vec2 original)
+{
+	return (original - vec2(0.5f)) * CamDim();
+	//vec2 camDim = CamDim();
+	//return original * camDim - 0.5f * glm::ceil(camDim);
 }
