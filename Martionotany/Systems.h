@@ -4,6 +4,14 @@
 
 #pragma region Awake
 
+SYSTEM(EnableAwakens, enableAwakens, { CompReq({}, {}, {HASH(NotEnabledOnAwaken)}) }, Update, AwakeEntityEval)
+{
+	for (ProcEntity& entity : components[0])
+	{
+		entity.entity->enabled = true;
+	}
+}
+
 SYSTEM(SilenceAwakens, silenceAwakens, { CompReq() }, Update, AwakeEntityEval)
 {
 	for (ProcEntity& entity : components[0])

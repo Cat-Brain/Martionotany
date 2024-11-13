@@ -1,18 +1,18 @@
 #include "Systems.h"
 
-#define FOO1(a) cout << a;
-#define FOO2(a, b) cout << a << ", " << b;
 
 int main()
 {
-	cout << "Greetings Universe!\n";
+    cout << "Greetings Universe!\n";
+
+    vector<CHash> test = HASH_ALL((InteractableColor)(MouseInteractable)(MeshRenderer));
 
     // Entities:
     int cameraIndex = ECS::AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT),
         CameraMouse() }));
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
-        Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 10, 2, 5)}));
+        Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 10, 2, 5) }));
 
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh),
         Position({3, 0}), Scale(), Rotation(), PhysicsBox(),
@@ -36,19 +36,21 @@ int main()
         ECS::Update();
         glfwPollEvents();
     }
-    
+
     ECS::Close();
 
     cout << "Farewell Universe!\n";
 
-	return 0;
+    return 0;
 }
 
 /*
 To Do:
+    Implement HASH_ALL into standardization of system calls.
     Fix weird issue with worldMousePos and gridMousePos not working quite right (it's soooo close)
         ^^ Seems to be highly tied with the amount of pixels not displayed that are rendered. Solution probably deals with them.
-    Fix RemoveEntity
+    Add prefabs or something similar
+    Add saving
     Allow for custom destructors in components or some other workaround to allow for vectors
         ^^ Partially implemented and likely to deal with Destroy systems
     Allow for proper handling of multiple of same component

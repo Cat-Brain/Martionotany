@@ -43,7 +43,7 @@ public:
 	vector<tuple<System*, uint, uint>> systems; // [System, Outer Index (Which entity parameter this meets), Inner Index (Which entity is this)
 	int index = 0;
 
-	Entity(vector<Component> components, bool enabled = true, bool firstFrame = true, bool toDestroy = false) :
+	Entity(vector<Component> components, bool enabled = false, bool firstFrame = true, bool toDestroy = false) :
 		components(components), enabled(enabled), firstFrame(firstFrame), toDestroy(toDestroy), systems{} { }
 
 	bool HasRequirements(CompReq& requirements)
@@ -129,7 +129,7 @@ namespace ECS
 				{
 					uint index = static_cast<uint>(system->entities[i].size());
 					// Add entity to system:
-					system->entities[i].push_back({ entityId, static_cast<uint>(entity.systems.size()),
+					system->entities[i].push_back({ entityId, static_cast<uint>(entities[entityId].systems.size()),
 						vector<ushort>(system->requirements[i].requirements.size())});
 
 					for (int j = 0; j < system->requirements[i].requirements.size(); j++)
@@ -155,7 +155,7 @@ namespace ECS
 			system->entities[outerIndex].erase(system->entities[outerIndex].begin() + innerIndex);
 			for (int i = innerIndex; i < system->entities[outerIndex].size(); i++)
 			{
-				get<2>(entities[get<0>(system->entities[outerIndex][i])].systems[get<1>(system->entities[outerIndex][i])]) = i;
+				get<2>(entities[get<0>(system->entities[outerIndex][i])].systems[get<1>(system->entities[outerIndex][i])])--;
 				//get<0>(system->entities[outerIndex][i])--;
 			}
 		}

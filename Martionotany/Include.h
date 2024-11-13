@@ -31,6 +31,7 @@ using std::reference_wrapper;
 #include "glm/gtx/rotate_vector.hpp"
 #define FAST_OBJ_IMPLEMENTATION
 #include "fast_obj.h"
+#include "macro_sequence_for.h"
 
 // Include Directory Usings:
 using glm::vec2;
@@ -64,6 +65,12 @@ namespace Vec
 {
     constexpr vec2 up(0, 1), right(1, 0), down(0, -1), left(-1, 0);
 }
+
+// Useful Utility Macros:
+#define DEFAULT_SF_FOR_STEP(n, d, x) d + 1
+#define DEFAULT_SF_FOR_FINAL(n, d)
+#define NUM_ARGS(...) (std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value)
+#define FOR_EACH(body, sequence) SF_FOR_EACH(body, DEFAULT_SF_FOR_STEP, DEFAULT_SF_FOR_FINAL, 0, sequence)
 
 // Random Functions That I Don't Know Where to Put:
 namespace std

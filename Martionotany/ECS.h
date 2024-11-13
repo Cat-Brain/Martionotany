@@ -3,6 +3,9 @@
 
 #define HASH(x) (CHash(typeid(x)))
 #define SET_HASH (hash_code = HASH(*this))
+#define HASH_ALL_BODY(n, d, x) HASH(x), 
+#define HASH_ALL(seq) { FOR_EACH(HASH_ALL_BODY, seq) }
+
 class BaseComponent
 {
 public:
@@ -16,6 +19,16 @@ public:
 };
 
 #define NewComponent(Name) class Name : public BaseComponent
+#define NewTag(Name) NewComponent(Name) \
+{ \
+public: \
+	Name() \
+	{ \
+		SET_HASH; \
+	} \
+}
+
+NewTag(NotEnabledOnAwaken);
 
 union Component;
 class Entity;
@@ -38,7 +51,7 @@ struct CompReq
 {
 	vector<CHash> requirements, tags, antiTags;
 
-	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> = {}) :
+	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> antiTags = {}) :
 		requirements(requirements), tags(tags), antiTags(antiTags) { }
 };
 
