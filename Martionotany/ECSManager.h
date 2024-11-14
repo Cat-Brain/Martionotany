@@ -29,9 +29,9 @@ union Component
 	TYPE(InteractableColor, interactableColor);
 	TYPE(Player, player);
 
-	constexpr Component& operator=(const Component& component)
+	Component& operator=(const Component& component)
 	{
-		return *this = component;
+		return *(Component*)memcpy(this, &component, sizeof(Component));
 	}
 };
 
@@ -110,6 +110,37 @@ public:
 		this->index = index;
 		for (auto& [system, outerIndex, innerIndex] : systems)
 			get<0>(system->entities[outerIndex][innerIndex]) = index;
+	}
+};
+
+class Prefab
+{
+public:
+	vector<Component> components;
+
+	Prefab(vector<Component> components) :
+		components(components) { }
+
+	Entity Clone(vector<Component> modifications = {}, vector<Component> additions = {},
+		bool enabled = false, bool firstFrame = true, bool toDestroy = false) const
+	{
+		vector<Component> finalizedComponents = components;
+		for (Component& component : modifications)
+		{
+			bool found = false;
+			for (int i = 0; i < components.size(); i++)
+				if (component.base.hash_code == components[i].base.hash_code)
+				{
+					finalizedComponents[i] = component;
+					found = true;
+					break;
+				}
+			assert(found);
+		}
+		finalizedComponents.reserve(finalizedComponents.size() + additions.size());
+		std::copy(additions.begin(), additions.end(), finalizedComponents.end());
+
+		return Entity(finalizedComponents, enabled, firstFrame, toDestroy);
 	}
 };
 

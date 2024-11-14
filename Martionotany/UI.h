@@ -37,3 +37,5 @@ public:
 	InteractableColor(vec4 normal, vec4 hovered, vec4 held):
 		normal(normal), hovered(hovered), held(held) { SET_HASH; }
 };
+
+NewTag(DestroyOnInteract);

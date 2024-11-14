@@ -68,13 +68,4 @@ namespace Input
 	{
 		inDebug ^= enterDebug.pressed;
 	}
-
-	SYSTEM(UpdateMouse, updateMouse, { }, Update)
-	{
-		double xPos, yPos;
-		glfwGetCursorPos(window, &xPos, &yPos);
-
-		pixMousePos = vec2(xPos, yPos);
-		screenMousePos = vec2(pixMousePos.x / (screenDim.x - 1), (screenDim.y - 1 - pixMousePos.y) / (screenDim.y - 1));
-	}
 }

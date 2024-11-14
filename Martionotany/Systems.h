@@ -1,10 +1,9 @@
 #pragma once
-#include "Window.h"
-#include "Input.h"
+#include "Prefabs.h"
 
 #pragma region Awake
 
-SYSTEM(EnableAwakens, enableAwakens, { CompReq({}, {}, {HASH(NotEnabledOnAwaken)}) }, Update, AwakeEntityEval)
+SYSTEM(EnableAwakens, enableAwakens, { COMP_REQ(, , (NotEnabledOnAwaken)) }, Update, AwakeEntityEval)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -12,7 +11,7 @@ SYSTEM(EnableAwakens, enableAwakens, { CompReq({}, {}, {HASH(NotEnabledOnAwaken)
 	}
 }
 
-SYSTEM(SilenceAwakens, silenceAwakens, { CompReq() }, Update, AwakeEntityEval)
+SYSTEM(SilenceAwakens, silenceAwakens, { {} }, Update, AwakeEntityEval)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -24,7 +23,7 @@ SYSTEM(SilenceAwakens, silenceAwakens, { CompReq() }, Update, AwakeEntityEval)
 
 #pragma region Early Physics
 
-SYSTEM(UpdateGravity, updateGravity, { CompReq({ HASH(PhysicsBody), HASH(Gravity) }) }, Update)
+SYSTEM(UpdateGravity, updateGravity, { COMP_REQ((PhysicsBody)(Gravity)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -39,7 +38,17 @@ SYSTEM(UpdateGravity, updateGravity, { CompReq({ HASH(PhysicsBody), HASH(Gravity
 
 #pragma region Game Stuff
 
-SYSTEM(UpdateMouse, updateMouse, { CompReq({ HASH(Camera), HASH(CameraMouse), HASH(Position) }) }, Update)
+SYSTEM(ReadMouse, readMouse, { }, Update)
+{
+	using namespace Input;
+	double xPos, yPos;
+	glfwGetCursorPos(window, &xPos, &yPos);
+	
+	pixMousePos = vec2(xPos, yPos);
+	screenMousePos = vec2(pixMousePos.x / (screenDim.x - 1), (screenDim.y - 1 - pixMousePos.y) / (screenDim.y - 1));
+}
+
+SYSTEM(UpdateCameraMouse, updateCameraMouse, { COMP_REQ((Camera)(CameraMouse)(Position)) }, Update)
 { // FIX THIS SYSTEM!!!
 	for (ProcEntity& entity : components[0])
 	{
@@ -54,8 +63,8 @@ SYSTEM(UpdateMouse, updateMouse, { CompReq({ HASH(Camera), HASH(CameraMouse), HA
 	}
 }
 
-SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ CompReq({ HASH(CameraMouse) }),
-	CompReq({ HASH(MouseInteractable), HASH(PhysicsCircle), HASH(Position) }) }), Update)
+SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ COMP_REQ((CameraMouse)),
+	COMP_REQ((MouseInteractable)(PhysicsCircle)(Position)) }), Update)
 {
 	for (ProcEntity& mouseEntity : components[0])
 	{
@@ -67,7 +76,7 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ CompReq({ HASH(CameraM
 }
 
 SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)}),
-	CompReq({ HASH(MouseInteractable), HASH(PhysicsBox), HASH(Position), HASH(Rotation)})}), Update)
+	COMP_REQ((MouseInteractable)(PhysicsBox)(Position)(Rotation)) }), Update)
 {
 	for (ProcEntity& mouseEntity : components[0])
 	{
@@ -79,7 +88,7 @@ SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)})
 }
 
 SYSTEM(UpdateInteractableColors, updateInteractableColors,
-	{ CompReq({ HASH(InteractableColor), HASH(MouseInteractable), HASH(MeshRenderer) })}, Update)
+	{ COMP_REQ((InteractableColor)(MouseInteractable)(MeshRenderer))}, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -96,7 +105,7 @@ SYSTEM(UpdateInteractableColors, updateInteractableColors,
 	}
 }
 
-SYSTEM(TestPrint, testPrint, { CompReq({ HASH(MouseInteractable)}) }, Update, OnReleaseEntityEval)
+SYSTEM(TestPrint, testPrint, { COMP_REQ(, (MouseInteractable)(DestroyOnInteract)) }, Update, OnReleaseEntityEval)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -104,7 +113,7 @@ SYSTEM(TestPrint, testPrint, { CompReq({ HASH(MouseInteractable)}) }, Update, On
 	}
 }
 
-SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompReq({ HASH(FollowCursor), HASH(Position) }) }, Update)
+SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Position)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -115,7 +124,7 @@ SYSTEM(UpdateFollowCursor, updateFollowCursor, { CompReq({ HASH(FollowCursor), H
 	}
 }
 
-SYSTEM(PlayerMove, playerMove, { CompReq({ HASH(PhysicsBody), HASH(Player), HASH(Rotation) })}, Update)
+SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation))}, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -143,11 +152,22 @@ SYSTEM(PlayerMove, playerMove, { CompReq({ HASH(PhysicsBody), HASH(Player), HASH
 	}
 }
 
+SYSTEM(TestSpawnDestructibles, testSpawnDestructibles, { COMP_REQ((CameraMouse)) }, Update)
+{
+	if (!Input::click2.pressed)
+		return;
+	for (ProcEntity& entity : components[0])
+	{
+		CameraMouse& mouse = entity[0];
+		ECS::AddEntity(testClickable.Clone({ Position(mouse.gridMousePos) }));
+	}
+}
+
 #pragma endregion
 
 #pragma region Physics
 
-SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { CompReq({HASH(Position), HASH(PhysicsBody)}) }, Update)
+SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { COMP_REQ((Position)(PhysicsBody)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -158,8 +178,8 @@ SYSTEM(UpdatePhysicsBodies, updatePhysicsBodies, { CompReq({HASH(Position), HASH
 	}
 }
 
-SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ CompReq({HASH(InfinitePhysicsWall)}),
-	CompReq({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }), Update)
+SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ COMP_REQ((InfinitePhysicsWall)),
+	COMP_REQ((Position)(PhysicsBody)(PhysicsCircle)) }), Update)
 {
 	for (ProcEntity& wallEntity : components[0])
 	{
@@ -180,8 +200,8 @@ SYSTEM(UpdateCirclesXInfiniteWalls, updateCirclesXInfiniteWalls, SysReq({ CompRe
 	}
 }
 
-SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ CompReq({HASH(InfinitePhysicsWall)}),
-	CompReq({HASH(Position), HASH(Rotation), HASH(PhysicsBody), HASH(PhysicsBox)})}), Update)
+SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ COMP_REQ((InfinitePhysicsWall)),
+	COMP_REQ((Position)(Rotation)(PhysicsBody)(PhysicsBox)) }), Update)
 {
 	for (ProcEntity& wallEntity : components[0])
 	{
@@ -215,7 +235,7 @@ SYSTEM(UpdateAABBsXInfiniteWalls, updateAABBsXInfiniteWalls, SysReq({ CompReq({H
 	}
 }
 
-SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompReq({HASH(Position), HASH(PhysicsBody), HASH(PhysicsCircle)}) }, Update)
+SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { COMP_REQ((Position)(PhysicsBody)(PhysicsCircle)) }, Update)
 {
 	for (int i = 0; i < (int)components[0].size() - 1; i++)
 		for (int j = i + 1; j < (int)components[0].size(); j++)
@@ -248,13 +268,13 @@ SYSTEM(UpdateCirclesXCircles, updateCirclesXCircles, { CompReq({HASH(Position), 
 
 #pragma region Rendering
 
-SYSTEM(PlayerCameraUpdate, playerCameraUpdate, { CompReq({ HASH(Position), HASH(Player) }) }, Update)
+SYSTEM(PlayerCameraUpdate, playerCameraUpdate, { COMP_REQ((Position)(Player)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 		entity[1].player.camera.pos = entity[0].position.pos;
 }
 
-SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompReq({ HASH(Position), HASH(Camera) }) }, Update)
+SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { COMP_REQ((Position)(Camera)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -277,8 +297,8 @@ SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { CompReq({ HASH(Position), HASH(
 	}
 }
 
-SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
-	CompReq({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)})}), Update)
+SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ COMP_REQ((Camera)),
+	COMP_REQ((MeshRenderer)(Position)(Scale)(Rotation)) }), Update)
 {
 	for (ProcEntity& cameraEntity : components[0])
 	{
@@ -329,8 +349,8 @@ SYSTEM(RenderToScreen, renderToScreen, { }, Update)
 
 constexpr vec4 debugColor = vec4(0, 1, 0, 0.3f);
 
-SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
-	CompReq({HASH(MeshRenderer), HASH(Position), HASH(Scale), HASH(Rotation)}) }), Update)
+SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ COMP_REQ((Camera)),
+	COMP_REQ((MeshRenderer)(Position)(Scale)(Rotation)) }), Update)
 {
 	if (!inDebug)
 		return;
@@ -371,7 +391,7 @@ SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ CompReq({HASH(Camera)}),
 
 #pragma region Destroy
 
-SYSTEM(ExecuteDestruction, executeDestruction, { CompReq() }, Update, DestroyEntityEval)
+SYSTEM(ExecuteDestruction, executeDestruction, { {} }, Update, DestroyEntityEval)
 {
 	for (int i = components[0].size() - 1; i >= 0; i--)
 		ECS::RemoveEntity(components[0][i].entity->index);

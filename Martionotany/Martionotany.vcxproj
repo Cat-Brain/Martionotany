@@ -170,6 +170,7 @@
     <ClInclude Include="Monitor.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Prefabs.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Systems.h" />
     <ClInclude Include="UI.h" />

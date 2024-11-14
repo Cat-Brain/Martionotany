@@ -14,10 +14,8 @@ int main()
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
         Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 10, 2, 5) }));
 
-    ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh),
-        Position({3, 0}), Scale(), Rotation(), PhysicsBox(),
-        MouseInteractable(),
-        InteractableColor(vec4(0.8f, 0.7f, 0.9f, 1.f), vec4(0.6f, 0.5f, 0.7f, 1.f), vec4(0.4f, 0.3f, 0.5f, 1.f)) }));
+    ECS::AddEntity(testClickable.Clone());
+    ECS::AddEntity(testClickable.Clone({ Position({-2, 2}) }));
 
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
         Position({5, 0}), Scale(), Rotation() }));
@@ -46,10 +44,8 @@ int main()
 
 /*
 To Do:
-    Implement HASH_ALL into standardization of system calls.
     Fix weird issue with worldMousePos and gridMousePos not working quite right (it's soooo close)
         ^^ Seems to be highly tied with the amount of pixels not displayed that are rendered. Solution probably deals with them.
-    Add prefabs or something similar
     Add saving
     Allow for custom destructors in components or some other workaround to allow for vectors
         ^^ Partially implemented and likely to deal with Destroy systems
