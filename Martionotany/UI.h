@@ -39,3 +39,12 @@ public:
 };
 
 NewTag(DestroyOnInteract);
+
+NewComponent(TestPrintOnInteract)
+{
+public:
+	char text;
+
+	TestPrintOnInteract(char text) :
+		text(text) { SET_HASH; }
+};

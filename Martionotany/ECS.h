@@ -49,10 +49,15 @@ enum CallRelativity
 
 struct CompReq
 {
-	vector<CHash> requirements, tags, antiTags;
+	vector<CHash> requirements, tags, antiTags, optionals;
 
-	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> antiTags = {}) :
-		requirements(requirements), tags(tags), antiTags(antiTags) { }
+	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> antiTags = {}, vector<CHash> optionals = {}) :
+		requirements(requirements), tags(tags), antiTags(antiTags), optionals(optionals) { }
+
+	size_t ReqCount() const
+	{
+		return requirements.size() + optionals.size();
+	}
 };
 
 struct ProcEntity
@@ -69,6 +74,11 @@ struct ProcEntity
 	Component& operator[](int index)
 	{
 		return *components[index];
+	}
+
+	bool ComponentFound(int index)
+	{
+		return components[index] != nullptr;
 	}
 };
 
@@ -118,7 +128,7 @@ public:
 
 	SysReq requirements; // <- Values are the hash_codes of components
 	function<void(vector<vector<ProcEntity>>)> fun;
-	vector<vector<tuple<uint, uint, vector<ushort>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
+	vector<vector<tuple<uint, uint, vector<short>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
 	bool enabled;
 	SystemCall call;
 	EntityEval eval;
@@ -156,13 +166,14 @@ vector<vector<System*>> System::sortedSystems(SystemCallCount);
 SYSTEM_X(, ##__VA_ARGS__, SYSTEM_3, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
 void name1(vector<vector<ProcEntity>> components)
 
-#define COMP_REQ_1(requirements)					CompReq(HASH_ALL(requirements))
-#define COMP_REQ_2(requirements, tags)				CompReq(HASH_ALL(requirements), HASH_ALL(tags))
-#define COMP_REQ_3(requirements, tags, antiTags)	CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags))
+#define COMP_REQ_1(requirements)							CompReq(HASH_ALL(requirements))
+#define COMP_REQ_2(requirements, tags)						CompReq(HASH_ALL(requirements), HASH_ALL(tags))
+#define COMP_REQ_3(requirements, tags, antiTags)			CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags))
+#define COMP_REQ_4(requirements, tags, antiTags, optionals)	CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags), HASH_ALL(optionals))
 
-#define COMP_REQ_X(ignored, _1, _2, fun, ...) fun
+#define COMP_REQ_X(ignored, _1, _2, _3, fun, ...) fun
 
-#define COMP_REQ(...) COMP_REQ_X(__VA_ARGS__, COMP_REQ_3, COMP_REQ_2, COMP_REQ_1)(__VA_ARGS__)
+#define COMP_REQ(...) COMP_REQ_X(__VA_ARGS__, COMP_REQ_4, COMP_REQ_3, COMP_REQ_2, COMP_REQ_1)(__VA_ARGS__)
 
 
 void CallSystems(SystemCall call)

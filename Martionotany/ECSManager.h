@@ -27,12 +27,15 @@ union Component
 	TYPE(Gravity, gravity);
 	TYPE(MouseInteractable, mouseInteractable);
 	TYPE(InteractableColor, interactableColor);
+	TYPE(TestPrintOnInteract, testPrintOnInteract);
 	TYPE(Player, player);
 
 	Component& operator=(const Component& component)
 	{
 		return *(Component*)memcpy(this, &component, sizeof(Component));
 	}
+
+	//~Component() { }
 };
 
 class Entity
@@ -137,8 +140,8 @@ public:
 				}
 			assert(found);
 		}
-		finalizedComponents.reserve(finalizedComponents.size() + additions.size());
-		std::copy(additions.begin(), additions.end(), finalizedComponents.end());
+		if (additions.size())
+			finalizedComponents.insert(finalizedComponents.end(), additions.begin(), additions.end());
 
 		return Entity(finalizedComponents, enabled, firstFrame, toDestroy);
 	}
@@ -161,7 +164,7 @@ namespace ECS
 					uint index = static_cast<uint>(system->entities[i].size());
 					// Add entity to system:
 					system->entities[i].push_back({ entityId, static_cast<uint>(entities[entityId].systems.size()),
-						vector<ushort>(system->requirements[i].requirements.size())});
+						vector<short>(system->requirements[i].ReqCount())});
 
 					for (int j = 0; j < system->requirements[i].requirements.size(); j++)
 						for (uint k = 0; k < entity.components.size(); k++)
@@ -170,6 +173,17 @@ namespace ECS
 								get<2>(system->entities[i][index])[j] = k;
 								break;
 							}
+
+					for (int j = 0, j2 = system->requirements[i].requirements.size(); j < system->requirements[i].optionals.size(); j++, j2++)
+					{
+						get<2>(system->entities[i][index])[j2] = -1;
+						for (uint k = 0; k < entity.components.size(); k++)
+							if (entity.components[k].base.hash_code == system->requirements[i].optionals[j])
+							{
+								get<2>(system->entities[i][index])[j2] = k;
+								break;
+							}
+					}
 
 					// Save system and index in entity:
 					entities[entityId].systems.push_back({system, i, index});
@@ -283,11 +297,18 @@ void System::ForcedRun()
 				continue;
 
 			// Add new ProcEntity with for the entity and set up its components vector
-			inputs[i].push_back(ProcEntity(vector<Component*>(requirements[i].requirements.size()), &entity));
+			inputs[i].push_back(ProcEntity(vector<Component*>(requirements[i].requirements.size() + requirements[i].optionals.size()), &entity));
 
 			// Add all the components in
-			for (int k = 0; k < requirements[i].requirements.size(); k++)
+			int k = 0;
+			for (; k < requirements[i].requirements.size(); k++)
 				inputs[i][inputs[i].size() - 1].components[k] = &entity.components[get<2>(entities[i][j])[k]];
+
+			for (; k < requirements[i].optionals.size(); k++)
+			{
+				int index = get<2>(entities[i][j])[k];
+				inputs[i][inputs[i].size() - 1].components[k] = index == -1 ? nullptr : &entity.components[index];
+			}
 		}
 	fun(inputs);
 }

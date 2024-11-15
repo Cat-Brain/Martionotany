@@ -105,11 +105,16 @@ SYSTEM(UpdateInteractableColors, updateInteractableColors,
 	}
 }
 
-SYSTEM(TestPrint, testPrint, { COMP_REQ(, (MouseInteractable)(DestroyOnInteract)) }, Update, OnReleaseEntityEval)
+SYSTEM(TestPrint, testPrint, { COMP_REQ(, (MouseInteractable)(DestroyOnInteract), , (TestPrintOnInteract)) }, Update, OnReleaseEntityEval)
 {
 	for (ProcEntity& entity : components[0])
 	{
 		entity.entity->toDestroy = true;
+		if (entity.ComponentFound(0))
+		{
+			TestPrintOnInteract& testPrint = entity[0];
+			cout << testPrint.text << '\n';
+		}
 	}
 }
 
@@ -159,7 +164,7 @@ SYSTEM(TestSpawnDestructibles, testSpawnDestructibles, { COMP_REQ((CameraMouse))
 	for (ProcEntity& entity : components[0])
 	{
 		CameraMouse& mouse = entity[0];
-		ECS::AddEntity(testClickable.Clone({ Position(mouse.gridMousePos) }));
+		ECS::AddEntity(testClickable.Clone({ Position(mouse.gridMousePos) }, { TestPrintOnInteract('j') }));
 	}
 }
 
