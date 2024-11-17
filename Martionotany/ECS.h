@@ -166,13 +166,14 @@ vector<vector<System*>> System::sortedSystems(SystemCallCount);
 SYSTEM_X(, ##__VA_ARGS__, SYSTEM_3, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
 void name1(vector<vector<ProcEntity>> components)
 
-#define COMP_REQ_1(requirements)							CompReq(HASH_ALL(requirements))
-#define COMP_REQ_2(requirements, tags)						CompReq(HASH_ALL(requirements), HASH_ALL(tags))
-#define COMP_REQ_3(requirements, tags, antiTags)			CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags))
-#define COMP_REQ_4(requirements, tags, antiTags, optionals)	CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags), HASH_ALL(optionals))
+#define COMP_REQ_1(requirements)							(CompReq(HASH_ALL(requirements)))
+#define COMP_REQ_2(requirements, tags)						(CompReq(HASH_ALL(requirements), HASH_ALL(tags)))
+#define COMP_REQ_3(requirements, tags, antiTags)			(CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags)))
+#define COMP_REQ_4(requirements, tags, antiTags, optionals)	(CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags), HASH_ALL(optionals)))
 
 #define COMP_REQ_X(ignored, _1, _2, _3, fun, ...) fun
 
+// requirements, tags, antiTags, optionals
 #define COMP_REQ(...) COMP_REQ_X(__VA_ARGS__, COMP_REQ_4, COMP_REQ_3, COMP_REQ_2, COMP_REQ_1)(__VA_ARGS__)
 
 

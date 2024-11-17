@@ -8,6 +8,16 @@ public:
 
 	Position(vec2 pos = vec2(0)) :
 		pos(pos) { SET_HASH; }
+
+	float Distance(Position position)
+	{
+		return glm::distance(pos, position.pos);
+	}
+
+	float Distance2(Position position)
+	{
+		return glm::distance2(pos, position.pos);
+	}
 };
 
 // Requires Position

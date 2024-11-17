@@ -4,6 +4,7 @@
 #include "Framebuffer.h"
 #include "UI.h"
 #include "Player.h"
+#include "Enemy.h"
 
 #define TYPE(type, name) type name; \
 Component(type&& name) : \
@@ -18,6 +19,7 @@ union Component
 	TYPE(Scale, scale);
 	TYPE(Rotation, rotation);
 	TYPE(Camera, camera);
+	TYPE(CameraMatrix, cameraMatrix);
 	TYPE(CameraMouse, cameraMouse);
 	TYPE(FollowCursor, followCursor);
 	TYPE(PhysicsBody, physicsBody);
@@ -29,6 +31,7 @@ union Component
 	TYPE(InteractableColor, interactableColor);
 	TYPE(TestPrintOnInteract, testPrintOnInteract);
 	TYPE(Player, player);
+	TYPE(MoveToPlayer, moveToPlayer);
 
 	Component& operator=(const Component& component)
 	{
@@ -124,10 +127,24 @@ public:
 	Prefab(vector<Component> components) :
 		components(components) { }
 
-	Entity Clone(vector<Component> modifications = {}, vector<Component> additions = {},
+	Entity Clone(vector<Component> modifications = {}, vector<Component> additions = {}, vector<CHash> removals = {},
 		bool enabled = false, bool firstFrame = true, bool toDestroy = false) const
 	{
 		vector<Component> finalizedComponents = components;
+
+		for (CHash hash : removals)
+		{
+			bool found = false;
+			for (int i = 0; i < components.size(); i++)
+				if (hash == components[i].base.hash_code)
+				{
+					finalizedComponents.erase(finalizedComponents.begin() + i);
+					found = true;
+					break;
+				}
+			assert(found);
+		}
+
 		for (Component& component : modifications)
 		{
 			bool found = false;

@@ -36,14 +36,14 @@ SYSTEM(UpdateGravity, updateGravity, { COMP_REQ((PhysicsBody)(Gravity)) }, Updat
 
 #pragma endregion
 
-#pragma region Game Stuff
+#pragma region Mouse stuff
 
 SYSTEM(ReadMouse, readMouse, { }, Update)
 {
 	using namespace Input;
 	double xPos, yPos;
 	glfwGetCursorPos(window, &xPos, &yPos);
-	
+
 	pixMousePos = vec2(xPos, yPos);
 	screenMousePos = vec2(pixMousePos.x / (screenDim.x - 1), (screenDim.y - 1 - pixMousePos.y) / (screenDim.y - 1));
 }
@@ -75,7 +75,7 @@ SYSTEM(MouseXPhysicsCircle, mouseXPhysicsCircle, SysReq({ COMP_REQ((CameraMouse)
 	}
 }
 
-SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)}),
+SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ COMP_REQ((CameraMouse)),
 	COMP_REQ((MouseInteractable)(PhysicsBox)(Position)(Rotation)) }), Update)
 {
 	for (ProcEntity& mouseEntity : components[0])
@@ -88,7 +88,7 @@ SYSTEM(MouseXPhysicsBox, mouseXPhysicsBox, SysReq({ CompReq({HASH(CameraMouse)})
 }
 
 SYSTEM(UpdateInteractableColors, updateInteractableColors,
-	{ COMP_REQ((InteractableColor)(MouseInteractable)(MeshRenderer))}, Update)
+	{ COMP_REQ((InteractableColor)(MouseInteractable)(MeshRenderer)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -129,7 +129,11 @@ SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Positio
 	}
 }
 
-SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation))}, Update)
+#pragma endregion
+
+#pragma region Game Stuff
+
+SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
@@ -157,14 +161,38 @@ SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation))}, Upd
 	}
 }
 
+SYSTEM(EnemyMoveToPlayer, enemyMoveToPlayer, SysReq({ COMP_REQ((MoveToPlayer)(PhysicsBody)(Position)), COMP_REQ((Position), (Player)) }), Update)
+{
+	if (components[1].size() <= 0)
+		return;
+
+	for (ProcEntity& enemy : components[0])
+	{
+		MoveToPlayer& move = enemy[0];
+		PhysicsBody& body = enemy[1];
+		Position& position = enemy[2];
+
+		Position* nearestPlayer = &components[1][0][0].position;
+		for (int i = 1; i < components[1].size(); i++)
+		{
+			Position& currentPosition = components[1][i][0];
+			if (nearestPlayer->Distance2(position) > currentPosition.Distance2(position))
+				nearestPlayer = &currentPosition;
+		}
+
+		body.vel = normalize(nearestPlayer->pos - position.pos);
+	}
+}
+
 SYSTEM(TestSpawnDestructibles, testSpawnDestructibles, { COMP_REQ((CameraMouse)) }, Update)
 {
 	if (!Input::click2.pressed)
 		return;
+
 	for (ProcEntity& entity : components[0])
 	{
 		CameraMouse& mouse = entity[0];
-		ECS::AddEntity(testClickable.Clone({ Position(mouse.gridMousePos) }, { TestPrintOnInteract('j') }));
+		ECS::AddEntity(testClickable.Clone({ Position(mouse.gridMousePos) }, { MoveToPlayer(1), PhysicsBody(1), TestPrintOnInteract('j')}));
 	}
 }
 
@@ -279,37 +307,40 @@ SYSTEM(PlayerCameraUpdate, playerCameraUpdate, { COMP_REQ((Position)(Player)) },
 		entity[1].player.camera.pos = entity[0].position.pos;
 }
 
-SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { COMP_REQ((Position)(Camera)) }, Update)
+SYSTEM(CameraMatrixUpdate, cameraMatrixUpdate, { COMP_REQ((Position)(Camera)(CameraMatrix)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
 		Position& pos = entity[0];
 		Camera& camera = entity[1];
+		CameraMatrix& camMat = entity[2];
 		vec2 stretch = camera.framebuffer->FindStretch();
 		// Find the typical matrix for rendering:
-		camera.matrix = glm::identity<mat4>();
-		camera.matrix = glm::scale(camera.matrix,
+		camMat.matrix = glm::identity<mat4>();
+		camMat.matrix = glm::scale(camMat.matrix,
 			vec3(pixelsPerUnit * 2.f / camera.framebuffer->dim.x,
 				pixelsPerUnit * 2.f / camera.framebuffer->dim.y, 1));
-		camera.matrix = glm::translate(camera.matrix, vec3(-pos.pos, 0));
+		camMat.matrix = glm::translate(camMat.matrix, vec3(-pos.pos, 0));
 		// Find the debug matrix for rendering of stuff non-pixelated:
-		camera.debugMatrix = glm::identity<mat4>();
-		camera.debugMatrix = glm::translate(camera.debugMatrix, -vec3(stretch - vec2(1), 0));
-		camera.debugMatrix = glm::scale(camera.debugMatrix,
+		camMat.debugMatrix = glm::identity<mat4>();
+		camMat.debugMatrix = glm::translate(camMat.debugMatrix, -vec3(stretch - vec2(1), 0));
+		camMat.debugMatrix = glm::scale(camMat.debugMatrix,
 			vec3(pixelsPerUnit * 2.f / (stretch.x * camera.framebuffer->dim.x),
 				pixelsPerUnit * 2.f / (stretch.y * camera.framebuffer->dim.y), 1));
-		camera.debugMatrix = glm::translate(camera.debugMatrix, vec3(-pos.pos, 0));
+		camMat.debugMatrix = glm::translate(camMat.debugMatrix, vec3(-pos.pos, 0));
 	}
 }
 
-SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ COMP_REQ((Camera)),
+SYSTEM(MeshRenderUpdate, meshRenderUpdate, SysReq({ COMP_REQ((Camera)(CameraMatrix)),
 	COMP_REQ((MeshRenderer)(Position)(Scale)(Rotation)) }), Update)
 {
 	for (ProcEntity& cameraEntity : components[0])
 	{
 		Camera& camera = cameraEntity[0];
+		CameraMatrix& camMat = cameraEntity[1];
+
 		glUseProgram(camera.shader.program);
-		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camera.matrix));
+		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camMat.matrix));
 
 		for (ProcEntity& meshEntity : components[1])
 		{
@@ -354,7 +385,7 @@ SYSTEM(RenderToScreen, renderToScreen, { }, Update)
 
 constexpr vec4 debugColor = vec4(0, 1, 0, 0.3f);
 
-SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ COMP_REQ((Camera)),
+SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ COMP_REQ((Camera)(CameraMatrix)),
 	COMP_REQ((MeshRenderer)(Position)(Scale)(Rotation)) }), Update)
 {
 	if (!inDebug)
@@ -364,8 +395,10 @@ SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ COMP_REQ((Camera)),
 	for (ProcEntity& cameraEntity : components[0])
 	{
 		Camera& camera = cameraEntity[0];
+		CameraMatrix& camMat = cameraEntity[1];
+
 		glUseProgram(camera.shader.program);
-		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camera.debugMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(defaultShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camMat.debugMatrix));
 
 		for (ProcEntity& meshEntity : components[1])
 		{

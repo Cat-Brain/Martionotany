@@ -44,6 +44,9 @@ using glm::mat2;
 using glm::mat3;
 using glm::mat4;
 
+using glm::identity;
+using glm::normalize;
+
 // Typedefs That I Don't Know Where to Put:
 
 typedef unsigned int uint;
