@@ -38,7 +38,28 @@ union Component
 		return *(Component*)memcpy(this, &component, sizeof(Component));
 	}
 
-	//~Component() { }
+	operator Component && () const
+	{
+		return (Component&&)move(*this);
+	}
+
+	template <class T>
+	bool IsComp()
+	{
+		return base.hash_code == HASH(T);
+	}
+
+	~Component()
+	{
+		//cout << "?";
+		if (IsComp<TestPrintOnInteract>())
+			;//testPrintOnInteract.text.~basic_string();
+	}
+
+	Component(const Component& component)
+	{
+		*this = component;
+	}
 };
 
 class Entity
@@ -49,7 +70,7 @@ public:
 	vector<tuple<System*, uint, uint>> systems; // [System, Outer Index (Which entity parameter this meets), Inner Index (Which entity is this)
 	int index = 0;
 
-	Entity(vector<Component> components, bool enabled = false, bool firstFrame = true, bool toDestroy = false) :
+	Entity(vector<Component>&& components, bool enabled = false, bool firstFrame = true, bool toDestroy = false) :
 		components(components), enabled(enabled), firstFrame(firstFrame), toDestroy(toDestroy), systems{} { }
 
 	bool HasRequirements(CompReq& requirements)
@@ -125,9 +146,9 @@ public:
 	vector<Component> components;
 
 	Prefab(vector<Component> components) :
-		components(components) { }
+		components(move(components)) { }
 
-	Entity Clone(vector<Component> modifications = {}, vector<Component> additions = {}, vector<CHash> removals = {},
+	Entity Clone(vector<Component>&& modifications = {}, vector<Component>&& additions = {}, vector<CHash>&& removals = {},
 		bool enabled = false, bool firstFrame = true, bool toDestroy = false) const
 	{
 		vector<Component> finalizedComponents = components;
@@ -160,7 +181,7 @@ public:
 		if (additions.size())
 			finalizedComponents.insert(finalizedComponents.end(), additions.begin(), additions.end());
 
-		return Entity(finalizedComponents, enabled, firstFrame, toDestroy);
+		return Entity(move(finalizedComponents), enabled, firstFrame, toDestroy);
 	}
 };
 

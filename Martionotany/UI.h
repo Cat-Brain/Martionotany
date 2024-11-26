@@ -44,6 +44,7 @@ NewComponent(TestPrintOnInteract)
 {
 public:
 	char text;
+	//string text;
 
 	TestPrintOnInteract(char text) :
 		text(text) { SET_HASH; }

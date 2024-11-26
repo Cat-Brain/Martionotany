@@ -32,7 +32,7 @@ public:
 NewComponent(CameraMatrix)
 {
 public:
-	mat4 matrix, debugMatrix;
+	mat4 matrix, debugMatrix; // <- Rename debugMatrix to highResMatrix or something similar, not sure yet.
 
 	CameraMatrix() :
 		matrix(identity<mat4>()), debugMatrix(identity<mat4>()) { SET_HASH; }

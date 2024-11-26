@@ -5,11 +5,11 @@ int main()
 {
     cout << "Greetings Universe!\n";
 
-    vector<CHash> test = HASH_ALL((InteractableColor)(MouseInteractable)(MeshRenderer));
-
     // Entities:
-    int cameraIndex = ECS::AddEntity(Entity({ Position(), Camera(&mainFramebuffer, RenderLayer::DEFAULT),
-        CameraMatrix(), CameraMouse() }));
+    vector<Component> otherTest = { Position() };
+    vector<Component> test = { move(Position()), move(Camera(&mainFramebuffer, RenderLayer::DEFAULT)),
+        move(CameraMatrix()), move(CameraMouse()) };
+    int cameraIndex = ECS::AddEntity(Entity(move(test)));
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(), Gravity(),
         Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 10, 2, 5) }));
