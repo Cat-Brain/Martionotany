@@ -7,19 +7,24 @@
 #include <format>
 #include <string>
 #include <typeindex>
+#include <map>
 
 // STL Usings:
-using std::min;
-using std::max;
 using std::cout;
 using std::vector;
+using std::initializer_list;
 using std::function;
 using std::string;
 using std::pair;
 using std::tuple;
-using std::get;
 using std::type_index;
 using std::reference_wrapper;
+using std::ifstream;
+using std::ios;
+using std::istreambuf_iterator;
+using std::min;
+using std::max;
+using std::get;
 using std::move;
 
 // Include Directory Includes:
@@ -77,6 +82,16 @@ namespace Vec
 #define FOR_EACH(body, sequence) SF_FOR_EACH(body, DEFAULT_SF_FOR_STEP, DEFAULT_SF_FOR_FINAL, 0, sequence)
 
 // Random Functions That I Don't Know Where to Put:
+template <typename T, typename... Args>
+auto make_vector(Args&&... args)
+{
+    vector<T> data;
+    data.reserve(sizeof...(Args));
+    (data.emplace_back(std::forward<Args>(args)), ...);
+    return data;
+}
+
+
 namespace std
 {
     inline std::string to_string(const vec4& a) {

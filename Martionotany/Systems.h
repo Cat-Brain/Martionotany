@@ -118,28 +118,54 @@ SYSTEM(TestPrint, testPrint, { COMP_REQ(, (MouseInteractable)(DestroyOnInteract)
 	}
 }
 
-SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Position)) }, Update)
-{
-	for (ProcEntity& entity : components[0])
-	{
-		FollowCursor& followCursor = entity[0];
-		Position& position = entity[1];
-
-		position.pos = followCursor.mouse.worldMousePos;
-	}
-}
+//SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Position)) }, Update)
+//{
+//	for (ProcEntity& entity : components[0])
+//	{
+//		FollowCursor& followCursor = entity[0];
+//		Position& position = entity[1];
+//
+//		position.pos = followCursor.mouse.gridMousePos;
+//	}
+//}
 
 #pragma endregion
 
 #pragma region Game Stuff
 
-SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation)) }, Update)
+SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation), , (PlayerJump)) }, Update)
 {
 	for (ProcEntity& entity : components[0])
 	{
 		PhysicsBody& physicsBody = entity[0];
 		Player& player = entity[1];
 		Rotation& rotation = entity[2];
+
+		vec2 inp(0);
+		if (Input::d.held)
+			inp.x++;
+		if (Input::a.held)
+			inp.x--;
+		if (Input::w.held)
+			inp.y++;
+		if (Input::s.held)
+			inp.y--;
+
+		if (inp == vec2(0))
+			physicsBody.vel = TrySubVec2(physicsBody.vel, deltaTime * player.accel);
+		else
+			physicsBody.vel = TryAddVec2(physicsBody.vel, normalize(inp) * deltaTime * player.accel, player.speed);
+	}
+}
+
+SYSTEM(PlayerMoveJump, playerMoveJump, { COMP_REQ((PhysicsBody)(Player)(PlayerJump)(Rotation)) }, Update)
+{
+	for (ProcEntity& entity : components[0])
+	{
+		PhysicsBody& physicsBody = entity[0];
+		Player& player = entity[1];
+		PlayerJump& playerJump = entity[2];
+		Rotation& rotation = entity[3];
 
 		float inp = 0;
 		if (Input::d.held)
@@ -155,7 +181,7 @@ SYSTEM(PlayerMove, playerMove, { COMP_REQ((PhysicsBody)(Player)(Rotation)) }, Up
 			physicsBody.vel.x = TryAddF(physicsBody.vel.x, mult * inp * deltaTime * player.accel, mult * player.speed);
 
 		if (Input::jump.pressed)
-			physicsBody.vel.y += player.jumpForce;
+			physicsBody.vel.y += playerJump.jumpForce;
 
 		rotation.rotation += deltaTime * 45 * mult;
 	}
@@ -385,9 +411,42 @@ SYSTEM(RenderToScreen, renderToScreen, { }, Update)
 
 constexpr vec4 debugColor = vec4(0, 1, 0, 0.3f);
 
+SYSTEM(NumberRenderUpdate, numberRenderUpdate, SysReq({ COMP_REQ((Camera)(CameraMatrix)),
+	COMP_REQ((NumberRenderer)(Position)(Scale)(Rotation)) }), Update)
+{
+	glEnable(GL_BLEND);
+	for (ProcEntity& cameraEntity : components[0])
+	{
+		Camera& camera = cameraEntity[0];
+		CameraMatrix& camMat = cameraEntity[1];
+
+		glUseProgram(textShader.program);
+		glUniformMatrix4fv(glGetUniformLocation(textShader.program, "camera"), 1, GL_FALSE, glm::value_ptr(camMat.debugMatrix));
+
+		for (ProcEntity& meshEntity : components[1])
+		{
+			NumberRenderer& numberRenderer = meshEntity[0];
+			if ((camera.renderMask & static_cast<byte>(numberRenderer.renderLayer)) == 0)
+				continue;
+			Position& pos = meshEntity[1];
+			Scale& scale = meshEntity[2];
+			Rotation& rotation = meshEntity[3];
+
+			mat3 transform = glm::identity<mat3>();
+			transform = glm::translate(transform, pos.pos);
+			transform = glm::rotate(transform, glm::radians(rotation.rotation));
+			transform = glm::scale(transform, scale.scale * 0.5f);
+
+			font.Render(numberRenderer.Text(), pos.pos, numberRenderer.size, {1, 1, 1, 1});
+		}
+	}
+	glDisable(GL_BLEND);
+}
+
 SYSTEM(DebugRenderUpdate, debugRenderUpdate, SysReq({ COMP_REQ((Camera)(CameraMatrix)),
 	COMP_REQ((MeshRenderer)(Position)(Scale)(Rotation)) }), Update)
 {
+
 	if (!inDebug)
 		return;
 

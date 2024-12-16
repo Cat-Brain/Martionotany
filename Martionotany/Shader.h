@@ -19,16 +19,17 @@ public:
 };
 const string vertFileAppend = "Vert.txt", fragFileAppend = "Frag.txt";
 
-char Shader::sourceBuffer[Shader::bufferSize] = { 0 };
-vector<Shader*> Shader::shaders = { };
+char Shader::sourceBuffer[Shader::bufferSize]{ 0 };
+vector<Shader*> Shader::shaders{ };
 
 Shader defaultShader("Default"),
-    framebufferShader("Framebuffer");
+    framebufferShader("Framebuffer"),
+    textShader("Text");
 
 
 GENERIC_SYSTEM(ShaderInit, shaderInit, After, Start)
 {
-    std::ifstream testStream;
+    ifstream testStream;
 
     for (Shader* shader : Shader::shaders)
     {

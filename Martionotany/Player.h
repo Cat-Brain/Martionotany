@@ -2,13 +2,21 @@
 #include "Camera.h"
 #include "Physics.h"
 
-class Player : public BaseComponent
+NewComponent(Player)
 {
 public:
 	Position& camera;
 	float accel, speed;
+
+	Player(Position& camera, float accel, float speed) :
+		camera(camera), accel(accel), speed(speed) { SET_HASH; }
+};
+
+NewComponent(PlayerJump)
+{
+public:
 	float jumpForce;
 
-	Player(Position& camera, float accel, float speed, float jumpForce) :
-		camera(camera), accel(accel), speed(speed), jumpForce(jumpForce) { SET_HASH; }
+	PlayerJump(float jumpForce) :
+		jumpForce(jumpForce) { SET_HASH; }
 };

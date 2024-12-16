@@ -39,11 +39,9 @@ vec2 TrySubVec2(const vec2 original, const float subtractional)
 	return vec2(0);
 }
 
-constexpr vec2 GRID_OFFSET{ 0.5f / pixelsPerUnit };
-
 vec2 ToGrid(vec2 pos)
 {
-	return GRID_OFFSET + glm::floor(pos * (float)pixelsPerUnit) / (float)pixelsPerUnit;
+	return (vec2(0.5f) + glm::floor(pos * (float)pixelsPerUnit)) / (float)pixelsPerUnit;
 }
 
 vec2 ToGridCentered(vec2 pos)

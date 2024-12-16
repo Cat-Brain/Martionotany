@@ -1,14 +1,15 @@
 #pragma once
+#include "Text.h"
 #include "Framebuffer.h"
 #include "Input.h"
 
 NewComponent(FollowCursor)
 {
 public:
-	CameraMouse& mouse;
+	//CameraMouse& mouse;
 
-	FollowCursor(CameraMouse& mouse) :
-		mouse(mouse) { SET_HASH; }
+	FollowCursor(/*CameraMouse & mouse*/)/* :
+		mouse(mouse)*/ { SET_HASH; }
 };
 
 // Requires some collider to function properly
@@ -44,8 +45,10 @@ NewComponent(TestPrintOnInteract)
 {
 public:
 	char text;
-	//string text;
 
 	TestPrintOnInteract(char text) :
 		text(text) { SET_HASH; }
 };
+
+
+//NewComponent(Card)

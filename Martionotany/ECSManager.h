@@ -31,11 +31,26 @@ union Component
 	TYPE(InteractableColor, interactableColor);
 	TYPE(TestPrintOnInteract, testPrintOnInteract);
 	TYPE(Player, player);
+	TYPE(PlayerJump, playerJump);
 	TYPE(MoveToPlayer, moveToPlayer);
+	TYPE(NumberRenderer, numberRenderer);
 
+	Component(Component&& component)
+	{
+		memcpy(this, &component, sizeof(Component));
+		memset(&component, 0, sizeof(Component));
+	}
+
+	// REMOVE THIS
 	Component& operator=(const Component& component)
 	{
 		return *(Component*)memcpy(this, &component, sizeof(Component));
+	}
+
+	// REMOVE THIS
+	Component(const Component& component)
+	{
+		*this = component;
 	}
 
 	operator Component && () const
@@ -51,14 +66,11 @@ union Component
 
 	~Component()
 	{
-		//cout << "?";
-		if (IsComp<TestPrintOnInteract>())
-			;//testPrintOnInteract.text.~basic_string();
-	}
-
-	Component(const Component& component)
-	{
-		*this = component;
+		/*if (IsComp<TestPrintOnInteract>())
+		{
+			cout << testPrintOnInteract.text << " destroyed\n";
+			testPrintOnInteract.text.~basic_string();
+		}*/
 	}
 };
 
@@ -71,7 +83,7 @@ public:
 	int index = 0;
 
 	Entity(vector<Component>&& components, bool enabled = false, bool firstFrame = true, bool toDestroy = false) :
-		components(components), enabled(enabled), firstFrame(firstFrame), toDestroy(toDestroy), systems{} { }
+		components(move(components)), enabled(enabled), firstFrame(firstFrame), toDestroy(toDestroy), systems{} { }
 
 	bool HasRequirements(CompReq& requirements)
 	{
@@ -148,7 +160,8 @@ public:
 	Prefab(vector<Component> components) :
 		components(move(components)) { }
 
-	Entity Clone(vector<Component>&& modifications = {}, vector<Component>&& additions = {}, vector<CHash>&& removals = {},
+	Entity Clone(vector<Component>&& modifications = {}, vector<Component>&& additions = {},
+		const initializer_list<CHash>&& removals = {},
 		bool enabled = false, bool firstFrame = true, bool toDestroy = false) const
 	{
 		vector<Component> finalizedComponents = components;
@@ -159,7 +172,7 @@ public:
 			for (int i = 0; i < components.size(); i++)
 				if (hash == components[i].base.hash_code)
 				{
-					finalizedComponents.erase(finalizedComponents.begin() + i);
+					//finalizedComponents.erase(finalizedComponents.begin() + i);
 					found = true;
 					break;
 				}
@@ -172,14 +185,22 @@ public:
 			for (int i = 0; i < components.size(); i++)
 				if (component.base.hash_code == components[i].base.hash_code)
 				{
-					finalizedComponents[i] = component;
+					finalizedComponents[i] = component; // <- REMOVE THIS OR CHANGE IT
 					found = true;
 					break;
 				}
 			assert(found);
 		}
 		if (additions.size())
-			finalizedComponents.insert(finalizedComponents.end(), additions.begin(), additions.end());
+		{
+			std::move(additions.begin(), additions.end(), std::back_inserter(finalizedComponents));
+			//finalizedComponents.reserve(finalizedComponents.size() + additions->size());
+			//for (Component& component : *additions)
+			//	finalizedComponents.emplace_back(move(component));
+			//memset(additions, 0, sizeof(vector<Component>));
+			//delete additions; // ughhhhh
+			//finalizedComponents.insert(finalizedComponents.end(), std::make_move_iterator(additions.begin()), std::make_move_iterator(additions.end()));
+		}
 
 		return Entity(move(finalizedComponents), enabled, firstFrame, toDestroy);
 	}
@@ -192,21 +213,22 @@ namespace ECS
 	int AddEntity(Entity&& entity)
 	{
 		uint entityId = static_cast<uint>(entities.size());
-		entities.push_back(entity);
+		entities.emplace_back(move(entity));
+		Entity& newEntity = *entities.rbegin();
 		entities[entityId].index = entityId;
 
 		for (System* system : System::systems)
 			for (int i = 0; i < system->requirements.size(); i++)
-				if (entity.HasRequirements(system->requirements[i]))
+				if (newEntity.HasRequirements(system->requirements[i]))
 				{
 					uint index = static_cast<uint>(system->entities[i].size());
 					// Add entity to system:
 					system->entities[i].push_back({ entityId, static_cast<uint>(entities[entityId].systems.size()),
-						vector<short>(system->requirements[i].ReqCount())});
+						vector<short>(system->requirements[i].ReqCount()) });
 
 					for (int j = 0; j < system->requirements[i].requirements.size(); j++)
-						for (uint k = 0; k < entity.components.size(); k++)
-							if (entity.components[k].base.hash_code == system->requirements[i].requirements[j])
+						for (uint k = 0; k < newEntity.components.size(); k++)
+							if (newEntity.components[k].base.hash_code == system->requirements[i].requirements[j])
 							{
 								get<2>(system->entities[i][index])[j] = k;
 								break;
@@ -215,8 +237,8 @@ namespace ECS
 					for (int j = 0, j2 = system->requirements[i].requirements.size(); j < system->requirements[i].optionals.size(); j++, j2++)
 					{
 						get<2>(system->entities[i][index])[j2] = -1;
-						for (uint k = 0; k < entity.components.size(); k++)
-							if (entity.components[k].base.hash_code == system->requirements[i].optionals[j])
+						for (uint k = 0; k < newEntity.components.size(); k++)
+							if (newEntity.components[k].base.hash_code == system->requirements[i].optionals[j])
 							{
 								get<2>(system->entities[i][index])[j2] = k;
 								break;
@@ -224,7 +246,7 @@ namespace ECS
 					}
 
 					// Save system and index in entity:
-					entities[entityId].systems.push_back({system, i, index});
+					entities[entityId].systems.push_back({ system, i, index });
 				}
 		return static_cast<int>(entities.size() - 1);
 	}
