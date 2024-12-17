@@ -6,10 +6,10 @@
 NewComponent(FollowCursor)
 {
 public:
-	//CameraMouse& mouse;
+	CameraMouse* mouse;
 
-	FollowCursor(/*CameraMouse & mouse*/)/* :
-		mouse(mouse)*/ { SET_HASH; }
+	FollowCursor(CameraMouse* mouse) :
+		mouse(mouse) { SET_HASH; }
 };
 
 // Requires some collider to function properly

@@ -43,9 +43,9 @@ int main()
     ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
         Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(),
         Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 30, 3) }));
-
+    ECS::GetEntity(cameraIndex).GetComponent(HASH(CameraMouse));
     ECS::AddEntity(Entity({ NumberRenderer(1, 1234567890),
-        FollowCursor(/*ECS::GetEntity(cameraIndex).GetComponent(HASH(CameraMouse))*/),
+        FollowCursor(ECS::GetEntity(cameraIndex).TryGetComponent<CameraMouse>()),
         Position(), Scale(), Rotation() }));
 
     ECS::AddEntity(testClickable.Clone());
@@ -86,7 +86,8 @@ Game To Do:
 /*
 Engine To Do:
     Fix weird issue with worldMousePos and gridMousePos not working quite right (it's soooo close)
-        ^^ Seems to be highly tied with the amount of pixels not displayed that are rendered. Solution probably deals with them.
+        Seems to be an issue with worldMousePos NOT gridMousePos, use this information for further investigation.
+        Seems to be only a verticality issue?
     Add saving
     Add file loading
     Allow for custom destructors in components or some other workaround to allow for vectors
@@ -94,7 +95,8 @@ Engine To Do:
     Allow for proper handling of multiple of same component
     Rework window handling to allow for more windows
     Add text rendering
-        Fix to use proper coordinate systems and matrix multiplication
+        Fix to use matrix multiplication
+        Implement actual text renderer in addition to just number renderer
     Add UI layer
     Add basic support for Audio
         ^^ CAudio?

@@ -118,16 +118,16 @@ SYSTEM(TestPrint, testPrint, { COMP_REQ(, (MouseInteractable)(DestroyOnInteract)
 	}
 }
 
-//SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Position)) }, Update)
-//{
-//	for (ProcEntity& entity : components[0])
-//	{
-//		FollowCursor& followCursor = entity[0];
-//		Position& position = entity[1];
-//
-//		position.pos = followCursor.mouse.gridMousePos;
-//	}
-//}
+SYSTEM(UpdateFollowCursor, updateFollowCursor, { COMP_REQ((FollowCursor)(Position)) }, Update)
+{
+	for (ProcEntity& entity : components[0])
+	{
+		FollowCursor& followCursor = entity[0];
+		Position& position = entity[1];
+
+		position.pos = followCursor.mouse->worldMousePos;
+	}
+}
 
 #pragma endregion
 
