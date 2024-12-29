@@ -4,12 +4,11 @@ layout (location = 1) in vec2 aUV;
 
 out vec2 texCoord;
 
-uniform vec2 position, scale;
 uniform mat4 camera;
 uniform mat3 transform;
 
 void main()
 {
-	gl_Position = camera * vec4(aPos * scale + position, 0.0, 1.0);
+	gl_Position = camera * vec4(transform * vec3(aPos, 1), 1.0);
 	texCoord = vec2(aPos.x, 1.0 - aPos.y);
 }

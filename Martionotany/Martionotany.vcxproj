@@ -172,10 +172,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Combat.h" />
     <ClInclude Include="ECSManager.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="MacroJank.h" />
     <ClInclude Include="Include.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Math.h" />

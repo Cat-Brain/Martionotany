@@ -149,7 +149,7 @@ vec2 Camera::CamDim() const
 	return static_cast<vec2>(screenDim) / static_cast<float>(framebuffer->ScaleFactor() * pixelsPerUnit);
 }
 
-vec2 Camera::ScreenToCameraSpace(vec2 original)
+vec2 Camera::ScreenToCameraSpace(vec2 original) const // <- May be wrong
 {
 	return (original - vec2(0.5f)) * CamDim();
 	//vec2 camDim = CamDim();

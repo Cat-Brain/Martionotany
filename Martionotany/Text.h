@@ -152,7 +152,7 @@ public:
     }
 #pragma endregion
 
-    void Render(string text, vec2 pos, float scale, vec4 color)
+    void Render(string text, vec2 pos, float scale, float rotation, vec4 color)
     {
         scale /= minimumSize;
         float xOffset = 0;
@@ -172,10 +172,17 @@ public:
 
             float w = ch.size.x * scale;
             float h = ch.size.y * scale;
+
+            mat3 transform = glm::identity<mat3>();
+            transform = glm::translate(transform, { xpos, ypos });
+            transform = glm::rotate(transform, rotation);
+            transform = glm::scale(transform, { w, h });
+
+            glUniformMatrix3fv(glGetUniformLocation(textShader.program, "transform"),
+                1, GL_FALSE, glm::value_ptr(transform));
+
             // render glyph texture over quad
             glBindTexture(GL_TEXTURE_2D, ch.textureID);
-            glUniform2f(glGetUniformLocation(textShader.program, "position"), xpos, ypos);
-            glUniform2f(glGetUniformLocation(textShader.program, "scale"), w, h);
             // render quad
             glDrawArrays(GL_TRIANGLES, 0, 6);
             // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
@@ -184,40 +191,6 @@ public:
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    /*void RenderRotated(string text, vec2 pos, float rotation, float scale, vec4 color) // FIX THIS TO ROTATE AROUND CENTER
-    {
-        scale /= minimumSize;
-        float xOffset = 0;
-        // activate corresponding render state	
-        glUseProgram(rotatedTextShader);
-        glUniform1f(glGetUniformLocation(rotatedTextShader, "rotation"), rotation);
-        glUniform4f(glGetUniformLocation(rotatedTextShader, "textColor"), color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(vao);
-
-        // iterate through all characters
-        for (string::const_iterator c = text.begin(); c != text.end(); c++)
-        {
-            Character ch = characters[*c];
-
-            float xpos = (pos.x + xOffset + ch.bearing.x * scale) / ScrWidth();
-            float ypos = (pos.y - (ch.size.y - ch.bearing.y) * scale) / ScrHeight();
-
-            float w = ch.size.x * scale / ScrWidth();
-            float h = ch.size.y * scale / ScrHeight();
-            // render glyph texture over quad
-            glBindTexture(GL_TEXTURE_2D, ch.textureID);
-            glUniform2f(glGetUniformLocation(rotatedTextShader, "position"), xpos, ypos);
-            glUniform2f(glGetUniformLocation(rotatedTextShader, "scale"), w, h);
-            // render quad
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-            xOffset += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
-        }
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }*/
 };
 
 vector<Font*> Font::fonts{};
@@ -247,17 +220,34 @@ NewComponent(NumberRenderer)
 public:
     float size;
     uint number;
+    vec4 color;
     byte renderLayer;
 
-    NumberRenderer(float size, uint number = 0, byte renderLayer = RenderLayer::DEFAULT) :
-        size(size), number(number), renderLayer(renderLayer) { SET_HASH; }
+    NumberRenderer(float size, uint number = 0, vec4 color = { 1, 1, 1, 1 },
+        byte renderLayer = RenderLayer::DEFAULT) :
+        size(size), number(number), color(color),
+        renderLayer(renderLayer) { SET_HASH; }
 
-    string Text()
+    string Text() const
     {
         int remainingNumber = number;
-        string text = string(static_cast<int>(ceil(log10f(max(1u, number)))), ' ');
+        string text = string(static_cast<int>(1 + floor(log10f(max(1u, number)))), ' ');
         for (int i = text.size() - 1; i >= 0; i--, remainingNumber /= 10)
             text[i] = '0' + remainingNumber % 10;
         return text;
     }
+};
+
+NewComponent(TextRenderer)
+{
+public:
+    float size;
+    int storageIndex;
+    vec4 color;
+    byte renderLayer;
+
+    TextRenderer(float size, const string&& text, vec4 color = { 1, 1, 1, 1 },
+        byte renderLayer = RenderLayer::DEFAULT) :
+        size(size), storageIndex(-1), color(color),
+        renderLayer(renderLayer) { SET_HASH; stringStorage.NewStorageCell(&storageIndex, text); }
 };

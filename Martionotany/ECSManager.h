@@ -5,6 +5,7 @@
 #include "UI.h"
 #include "Player.h"
 #include "Enemy.h"
+#include "Combat.h"
 
 #define TYPE(type, name) type name; \
 Component(type&& name) : \
@@ -21,19 +22,28 @@ union Component
 	TYPE(Camera, camera);
 	TYPE(CameraMatrix, cameraMatrix);
 	TYPE(CameraMouse, cameraMouse);
+	TYPE(Follower, follower);
 	TYPE(FollowCursor, followCursor);
 	TYPE(PhysicsBody, physicsBody);
+	TYPE(PhysicsBodyIgnore, physicsBodyIgnore);
+	TYPE(PhysicsTrigger, physicsTrigger);
 	TYPE(PhysicsCircle, physicsCircle);
 	TYPE(PhysicsBox, physicsBox);
 	TYPE(InfinitePhysicsWall, infinitePhysicsWall);
 	TYPE(Gravity, gravity);
 	TYPE(MouseInteractable, mouseInteractable);
 	TYPE(InteractableColor, interactableColor);
-	TYPE(TestPrintOnInteract, testPrintOnInteract);
 	TYPE(Player, player);
 	TYPE(PlayerJump, playerJump);
 	TYPE(MoveToPlayer, moveToPlayer);
 	TYPE(NumberRenderer, numberRenderer);
+	TYPE(TextRenderer, textRenderer);
+	TYPE(Health, health);
+	TYPE(CustomDeath, customDeath);
+	TYPE(Direction, direction);
+	TYPE(Projectile, projectile);
+	TYPE(PointAward, pointAward);
+	TYPE(PlayerPoints, playerPoints);
 
 	Component(Component&& component)
 	{
@@ -155,12 +165,14 @@ public:
 class Prefab
 {
 public:
+	static vector<Prefab*> prefabs;
+
 	vector<Component> components;
 
 	Prefab(vector<Component> components) :
-		components(move(components)) { }
+		components(move(components)) { prefabs.push_back(this); }
 
-	Entity Clone(vector<Component>&& modifications = {}, vector<Component>&& additions = {},
+	Entity Clone(vector<Component>&& modifications = {}, const initializer_list<Component>&& additions = {},
 		const initializer_list<CHash>&& removals = {},
 		bool enabled = false, bool firstFrame = true, bool toDestroy = false) const
 	{
@@ -204,7 +216,35 @@ public:
 
 		return Entity(move(finalizedComponents), enabled, firstFrame, toDestroy);
 	}
+
+	// Bugs out whenever component not found and returns an error
+	Component& GetComponent(CHash desired)
+	{
+		for (Component& component : components)
+			if (component.base.hash_code == desired)
+				return component;
+		assert(false);
+		return components[0];
+	}
+
+	// Return nullptr when not found
+	Component* TryGetComponent(CHash desired)
+	{
+		for (Component& component : components)
+			if (component.base.hash_code == desired)
+				return &component;
+		return nullptr;
+	}
+	// Return nullptr when not found
+	template <class T>
+	T* TryGetComponent()
+	{
+		// Maybe put the correct cast type here someday lol
+		return (T*)TryGetComponent(HASH(T));
+	}
 };
+
+vector<Prefab*> Prefab::prefabs{};
 
 namespace ECS
 {
@@ -335,6 +375,15 @@ bool OnReleaseEntityEval(Entity& entity)
 		return false;
 	return interactable->released;
 }
+
+bool OnTriggerOverlapEntityEval(Entity& entity)
+{
+	PhysicsTrigger* trigger = entity.TryGetComponent<PhysicsTrigger>();
+	if (trigger == nullptr)
+		return false;
+	return trigger->lastHit != nullptr;
+	//return trigger->hitList.size() > 0;
+}
 #pragma endregion
 
 void System::Run()
@@ -353,7 +402,7 @@ void System::ForcedRun()
 			Entity& entity = ECS::GetEntity(get<0>(entities[i][j]));
 
 			// Skip if entity does not meet eval requirements
-			if (!eval(entity))
+			if (!requirements[i].eval(entity))
 				continue;
 
 			// Add new ProcEntity with for the entity and set up its components vector
@@ -364,7 +413,7 @@ void System::ForcedRun()
 			for (; k < requirements[i].requirements.size(); k++)
 				inputs[i][inputs[i].size() - 1].components[k] = &entity.components[get<2>(entities[i][j])[k]];
 
-			for (; k < requirements[i].optionals.size(); k++)
+			for (; k < requirements[i].requirements.size() + requirements[i].optionals.size(); k++)
 			{
 				int index = get<2>(entities[i][j])[k];
 				inputs[i][inputs[i].size() - 1].components[k] = index == -1 ? nullptr : &entity.components[index];

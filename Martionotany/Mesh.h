@@ -213,9 +213,9 @@ public:
     Shader& shader;
     Mesh& mesh;
     vec4 color;
-    byte renderLayer;
+    byte sortOrder, renderLayer;
 
-    MeshRenderer(Shader& shader, Mesh& mesh, vec4 color = { 1, 1, 1, 1 }, byte renderLayer = RenderLayer::DEFAULT) :
+    MeshRenderer(Shader& shader, Mesh& mesh, vec4 color = { 1, 1, 1, 1 }, byte sortOrder = SortOrder::DEFAULT, byte renderLayer = RenderLayer::DEFAULT) :
         shader(shader), mesh(mesh), color(color), renderLayer(renderLayer) { SET_HASH; }
 };
 

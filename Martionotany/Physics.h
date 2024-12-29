@@ -20,6 +20,11 @@ public:
 	}
 };
 
+enum class PhysicsLayer : byte
+{
+	DEFAULT
+};
+
 // Requires Position
 NewComponent(PhysicsBody)
 {
@@ -31,7 +36,25 @@ public:
 		mass(mass), vel(vel) { SET_HASH; assert(mass > 0); }
 };
 
-class PhysicsCircle : public BaseComponent
+NewComponent(PhysicsBodyIgnore)
+{
+public:
+	int storageIndex;
+
+	PhysicsBodyIgnore(const vector<Entity*>&& ignored = {}) :
+		storageIndex(-1) { SET_HASH; entityStorage.NewStorageCell(&storageIndex, ignored); }
+};
+
+NewComponent(PhysicsTrigger)
+{
+public:
+	Entity* lastHit;
+
+	PhysicsTrigger() :
+		lastHit(nullptr) { SET_HASH; }
+};
+
+NewComponent(PhysicsCircle)
 {
 public:
 	float radius;

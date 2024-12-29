@@ -18,7 +18,9 @@ public:
 	}
 };
 
-#define NewComponent(Name) class Name : public BaseComponent
+#define NewComponent(Name) \
+class Name : public BaseComponent
+
 #define NewTag(Name) NewComponent(Name) \
 { \
 public: \
@@ -32,6 +34,32 @@ NewTag(NotEnabledOnAwaken);
 
 union Component;
 class Entity;
+
+
+template <typename T>
+class Storer
+{
+public:
+	vector<T> data;
+	vector<int*> locations;
+
+	void NewStorageCell(int* location, const T toStore = {})
+	{
+		assert(location != nullptr);
+		*location = data.size();
+		locations.push_back(location);
+		data.push_back(toStore);
+	}
+
+	T& Get(int storageIndex)
+	{
+		return data[storageIndex];
+	}
+};
+
+Storer<vector<Entity*>> entityStorage;
+Storer<string> stringStorage;
+
 
 enum SystemCall
 {
@@ -47,12 +75,18 @@ enum CallRelativity
 	Before, After
 };
 
+
+typedef function<bool(Entity&)> EntityEval;
+bool DefaultEntityEval(Entity& entity);
+
 struct CompReq
 {
 	vector<CHash> requirements, tags, antiTags, optionals;
+	EntityEval eval;
 
-	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> antiTags = {}, vector<CHash> optionals = {}) :
-		requirements(requirements), tags(tags), antiTags(antiTags), optionals(optionals) { }
+	CompReq(vector<CHash> requirements = {}, vector<CHash> tags = {}, vector<CHash> antiTags = {},
+		vector<CHash> optionals = {}, EntityEval eval = DefaultEntityEval) :
+		requirements(requirements), tags(tags), antiTags(antiTags), optionals(optionals), eval(eval) { }
 
 	size_t ReqCount() const
 	{
@@ -117,25 +151,22 @@ GenericSystem name2(name1, callRelativity, systemCall); \
 void name1()
 
 
-typedef function<bool(Entity&)> EntityEval;
-bool DefaultEntityEval(Entity& entity);
-
 class System
 {
 public:
 	static vector<System*> systems;
 	static vector<vector<System*>> sortedSystems;
 
-	SysReq requirements; // <- Values are the hash_codes of components
+	SysReq requirements; // Values are the hash_codes of components
 	function<void(vector<vector<ProcEntity>>)> fun;
-	vector<vector<tuple<uint, uint, vector<short>>>> entities; // [Entity index, Entity.systems index for this system, relevant component indices]
+	// [Entity index, Entity.systems index for this system, relevant component indices]
+	vector<vector<tuple<uint, uint, vector<short>>>> entities;
 	bool enabled;
 	SystemCall call;
-	EntityEval eval;
 
 		System(SysReq requirements, function<void(vector<vector<ProcEntity>>)> fun, SystemCall call,
-		EntityEval eval = DefaultEntityEval, bool enabled = true) :
-		requirements(requirements), fun(fun), call(call), enabled(enabled), eval(eval),
+		bool enabled = true) :
+		requirements(requirements), fun(fun), call(call), enabled(enabled),
 			entities(requirements.size())
 	{
 		systems.push_back(this);
@@ -157,24 +188,26 @@ vector<System*> System::systems{};
 vector<vector<System*>> System::sortedSystems(SystemCallCount);
 
 #define SYSTEM_1(name1, name2, requirements, call)					System name2(requirements, name1, call);
-#define SYSTEM_2(name1, name2, requirements, call, eval)			System name2(requirements, name1, call, eval);
-#define SYSTEM_3(name1, name2, requirements, call, eval, enabled)	System name2(requirements, name1, call, eval, enabled);
+#define SYSTEM_2(name1, name2, requirements, call, enabled)	System name2(requirements, name1, call, enabled);
 
-#define SYSTEM_X(ignored, _1, _2, fun, ...) fun
+#define SYSTEM_X(ignored, _1, fun, ...) fun
 
 #define SYSTEM(name1, name2, requirements, call, ...) void name1(vector<vector<ProcEntity>> components); \
-SYSTEM_X(, ##__VA_ARGS__, SYSTEM_3, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
+SYSTEM_X(, ##__VA_ARGS__, SYSTEM_2, SYSTEM_1)(name1, name2, requirements, call, ##__VA_ARGS__) \
 void name1(vector<vector<ProcEntity>> components)
 
 #define COMP_REQ_1(requirements)							(CompReq(HASH_ALL(requirements)))
 #define COMP_REQ_2(requirements, tags)						(CompReq(HASH_ALL(requirements), HASH_ALL(tags)))
 #define COMP_REQ_3(requirements, tags, antiTags)			(CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags)))
-#define COMP_REQ_4(requirements, tags, antiTags, optionals)	(CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags), HASH_ALL(optionals)))
+#define COMP_REQ_4(requirements, tags, antiTags, optionals)	(CompReq(HASH_ALL(requirements), HASH_ALL(tags), HASH_ALL(antiTags),\
+	HASH_ALL(optionals)))
+#define COMP_REQ_5(requirements, tags, antiTags, optionals, eval) (CompReq(HASH_ALL(requirements), HASH_ALL(tags), \
+	HASH_ALL(antiTags), HASH_ALL(optionals), eval))
 
-#define COMP_REQ_X(ignored, _1, _2, _3, fun, ...) fun
+#define COMP_REQ_X(ignored, _1, _2, _3, _4, fun, ...) fun
 
-// requirements, tags, antiTags, optionals
-#define COMP_REQ(...) COMP_REQ_X(__VA_ARGS__, COMP_REQ_4, COMP_REQ_3, COMP_REQ_2, COMP_REQ_1)(__VA_ARGS__)
+// requirements, tags, antiTags, optionals, eval
+#define COMP_REQ(...) COMP_REQ_X(__VA_ARGS__, COMP_REQ_5, COMP_REQ_4, COMP_REQ_3, COMP_REQ_2, COMP_REQ_1)(__VA_ARGS__)
 
 
 void CallSystems(SystemCall call)

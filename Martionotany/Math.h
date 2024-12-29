@@ -1,6 +1,13 @@
 #pragma once
 #include "Include.h"
 
+vec2 SNormalize(vec2 original)
+{
+	if (original == vec2(0))
+		return vec2(0);
+	return normalize(original);
+}
+
 float TryAddF(const float original, float additional, float maximum)
 {
 	additional += original;

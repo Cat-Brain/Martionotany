@@ -40,19 +40,14 @@ int main()
     int cameraIndex = ECS::AddEntity(Entity({ Position(),
         Camera(&mainFramebuffer, RenderLayer::DEFAULT), CameraMatrix(), CameraMouse() }));
 
-    ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.6f, 0.8f, 0.4f, 1.f)),
-        Position({0, 0}), Scale(), Rotation(45), PhysicsBody(1), PhysicsBox(),
-        Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 30, 3) }));
+    ECS::AddEntity(Prefabs::player.Clone({}, { Player(ECS::GetEntity(cameraIndex).GetComponent(HASH(Position)), 30, 3) }));
     ECS::GetEntity(cameraIndex).GetComponent(HASH(CameraMouse));
-    ECS::AddEntity(Entity({ NumberRenderer(1, 1234567890),
-        FollowCursor(ECS::GetEntity(cameraIndex).TryGetComponent<CameraMouse>()),
+    ECS::AddEntity(Entity({ NumberRenderer(1), PlayerPoints(),
+        Follower(ECS::GetEntity(cameraIndex).TryGetComponent<Position>(), {0, -3.5f}),
         Position(), Scale(), Rotation() }));
 
-    ECS::AddEntity(testClickable.Clone());
-    ECS::AddEntity(testClickable.Clone({ Position({-2, 2}) }));
-
-    ECS::AddEntity(Entity({ MeshRenderer(defaultShader, quadMesh, vec4(0.8f, 0.6f, 0.8f, 1.f)),
-        Position({5, 0}), Scale(), Rotation() }));
+    ECS::AddEntity(Prefabs::testClickable.Clone({ Position({3, 0}) }));
+    ECS::AddEntity(Prefabs::testClickable.Clone({ Position({-2, 2}) }));
 
     // Program Execution:
     ECS::Start();
@@ -73,21 +68,27 @@ int main()
 
 /*
 Game To Do:
-    Health
-    Projectiles
     Player Projectiles
     Enemy Basics
     Enemy Advanced
-    Lose
+    Finish Player Health
+    Lose State
     Restart
     Main Menu
 */
 
 /*
-Engine To Do:
+Bug Fixes:
+    Make player collide with enemies?
     Fix weird issue with worldMousePos and gridMousePos not working quite right (it's soooo close)
         Seems to be an issue with worldMousePos NOT gridMousePos, use this information for further investigation.
-        Seems to be only a verticality issue?
+        Seems to effect both dimensions but verticality strongest (which is the inverse of what was expected).
+*/
+
+/*
+Engine To Do:
+    Implement physics layers
+    Upgrade triggers to rely on vectors of hits rather than just storing the last one
     Add saving
     Add file loading
     Allow for custom destructors in components or some other workaround to allow for vectors
@@ -95,7 +96,6 @@ Engine To Do:
     Allow for proper handling of multiple of same component
     Rework window handling to allow for more windows
     Add text rendering
-        Fix to use matrix multiplication
         Implement actual text renderer in addition to just number renderer
     Add UI layer
     Add basic support for Audio

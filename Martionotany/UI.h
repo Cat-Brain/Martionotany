@@ -1,7 +1,19 @@
 #pragma once
+#include "Physics.h"
 #include "Text.h"
 #include "Framebuffer.h"
 #include "Input.h"
+
+// Not for use on objects with physics colliders or similar
+NewComponent(Follower)
+{
+public:
+	Position* parent;
+	vec2 offset;
+
+	Follower(Position* parent, vec2 offset = { 0, 0 }) :
+		parent(parent), offset(offset) { SET_HASH; }
+};
 
 NewComponent(FollowCursor)
 {
@@ -40,15 +52,6 @@ public:
 };
 
 NewTag(DestroyOnInteract);
-
-NewComponent(TestPrintOnInteract)
-{
-public:
-	char text;
-
-	TestPrintOnInteract(char text) :
-		text(text) { SET_HASH; }
-};
 
 
 //NewComponent(Card)

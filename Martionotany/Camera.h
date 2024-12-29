@@ -1,6 +1,16 @@
 #pragma once
 #include "ECS.h"
 
+namespace SortOrder
+{
+	enum
+	{
+		EARLY_TRANSPARENT, DEFAULT, LATE_TRANSPARENT
+	};
+}
+
+vector<bool> sortOrderTransparencyTable = { true, false, true };
+
 namespace RenderLayer
 {
 	enum
@@ -25,7 +35,7 @@ public:
 
 	vec2 CamDim() const; // Defined after Framebuffer
 
-	vec2 ScreenToCameraSpace(vec2 original);
+	vec2 ScreenToCameraSpace(vec2 original) const;
 };
 
 // Requires Camera
